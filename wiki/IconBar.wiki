@@ -1,10 +1,20 @@
-#summary One-sentence summary of this page.
+#IconBar shows a small icon with two bars in the taskbar.
 
 = Introduction =
 
 IconBar shows a small icon with two bars in the taskbar.
 
-Screenshots...
 
+This is how it looks like in Ubuntu:
+
+[http://ezwidgets.googlecode.com/svn/pics/iconbar_ubuntu.png]
+
+And this is how it looks like in Windows XP:
+
+[http://ezwidgets.googlecode.com/svn/pics/iconbar.png]
 
 = Details =
+
+Will add those later of course! :-)
+
+Code available from SVN.
