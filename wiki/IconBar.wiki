@@ -1,0 +1,10 @@
+#summary One-sentence summary of this page.
+
+= Introduction =
+
+IconBar shows a small icon with two bars in the taskbar.
+
+Screenshots...
+
+
+= Details =
