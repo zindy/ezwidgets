@@ -17,4 +17,4 @@ And this is how it looks like in Windows XP:
 
 Will add those later of course! :-)
 
-Code available from SVN.
+Code available from SVN: [http://ezwidgets.googlecode.com/svn/trunk/lutctrl/]
