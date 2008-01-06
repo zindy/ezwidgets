@@ -1,4 +1,4 @@
-#IconBar shows a small icon with two bars in the taskbar.
+#summary IconBar shows a small icon with two bars in the taskbar.
 
 = Introduction =
 
