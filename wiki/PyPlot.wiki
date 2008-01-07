@@ -1,0 +1,16 @@
+#summary My additions to pyplot
+
+= Introduction =
+
+Yes, one could use matplotlib but sometimes, pyplot will do just fine. Sometimes, a few tweaks here and there were needed. I thought I might as well publish them all in my very own (almost certainly useless) version of pyplot called... ezplot!
+
+
+= Details =
+
+Latest addition is antialiasing. Haven't really tested it as much as I would've liked. So far, I have noticed that it plays nicely with Ubuntu, not so nicely with XP. This will require more testing I guess!
+
+Anyway, this warrants some screenshots, so here is an antialiased ezplot (compared to the normal plot)
+
+[http://ezwidgets.googlecode.com/svn/pics/ezplot.png] [http://ezwidgets.googlecode.com/svn/pics/plot.png]
+
+Code available here: [http://ezwidgets.googlecode.com/svn/trunk/ezplot/]
