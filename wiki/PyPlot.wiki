@@ -2,7 +2,7 @@
 
 = Introduction =
 
-Yes, one could use matplotlib but sometimes, pyplot will do just fine. Sometimes, a few tweaks here and there were needed. I thought I might as well publish them all in my very own (almost certainly useless) version of pyplot called... ezplot!
+Yes, one could use matplotlib but sometimes, pyplot will do just fine... although a few tweaks here and there might be necessary. I thought I might as well publish all the tweaks in my very own (almost certainly useless) version of pyplot called... ezplot!
 
 
 = Details =
