@@ -1,0 +1,18 @@
+#summary Foldable panels (XP style)
+= Introduction =
+
+I like the way foldable panels look in Windows XP so I thought I'd have a go at making something similar for wxPython.
+
+= Details =
+
+There are a few problems in Ubuntu. I'll have a go at fixing the code when I get a chance. Works about right in Windows.
+
+= Todo =
+
+Would be nice to check the length of the panel title to change the string from
+
+_This is a long title_
+
+to
+
+_This..._
