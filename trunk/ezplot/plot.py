@@ -34,12 +34,7 @@
 #   - Added functions GetClosestPoints (all curves) and GetClosestPoint (only closest curve)
 #       can be in either user coords or screen coords.
 #   
-# Feb 19, 2005  Egor Zindy (zindy@mail.com)
-#   - Added a PolyBar class
-#   - Added a PolyErrorBar class
-#     PolyErrorBar uses an error attribute which can either be a single [-,+] error defined for
-#     all the points or a [2,n] array defining a [-,+] error for each point.
-#     The demo for both classes is in draw8Object
+#
 
 """
 This is a simple light weight plotting module that can be used with
@@ -206,105 +201,6 @@ class PolyPoints:
         return [pntIndex, self.points[pntIndex], self.scaled[pntIndex], dist]
         
         
-class PolyBar(PolyPoints):
-    """Class to define line type and style line segment from coords (x,y1) to next (x,y2) XXX better way of doing this to save duplicating x coord?
-        - All methods except __init__ are private.
-    """
-    
-    _attributes = {'colour': 'black',
-                   'width': 1,
-                   'style': wx.SOLID,
-                   'legend': ''}
-
-    def __init__(self, points, **attr):
-        """Creates PolyLine object
-            points - sequence (array, tuple or list) of (x,y) points making up line
-            **attr - key word attributes
-                Defaults:
-                    'colour'= 'black',          - wx.Pen Colour any wx.NamedColour
-                    'width'= 1,                 - Pen width
-                    'style'= wx.SOLID,          - wx.Pen style
-                    'legend'= ''                - Line Legend to display
-        """
-        PolyPoints.__init__(self, points, attr)
-
-    def draw(self, dc, printerScale, coord= None):
-        colour = self.attributes['colour']
-        width = self.attributes['width'] * printerScale
-        style= self.attributes['style']
-        pen = wx.Pen(wx.NamedColour(colour), width, style)
-        pen.SetCap(wx.CAP_BUTT)
-        dc.SetPen(pen)
-
-        if coord == None:
-            coord=self.scaled
-            lines= _Numeric.concatenate((coord,coord),axis=1)
-            lines[:,1]=self.currentShift[1]
-            dc.DrawLineList(lines.astype(_Numeric.Int32))
-        else:
-            dc.DrawLines(coord)
-
-    def getSymExtent(self, printerScale):
-        """Width and Height of Marker"""
-        h= self.attributes['width'] * printerScale
-        w= 5 * h
-        return (w,h)
-
-
-class PolyErrorBar(PolyPoints):
-    """Class to define line type and style line segment from coords (x,y1) to next (x,y2) XXX better way of doing this to save duplicating x coord?
-        - All methods except __init__ are private.
-    """
-    
-    _attributes = {'colour': 'black',
-                   'width': 1,
-                   'style': wx.SOLID,
-                   'legend': '',
-                   'error': _Numeric.zeros(2)}
-
-    def __init__(self, points, **attr):
-        """Creates PolyLine object
-            points - sequence (array, tuple or list) of (x,y) points making up line
-            **attr - key word attributes
-                Defaults:
-                    'colour'= 'black',          - wx.Pen Colour any wx.NamedColour
-                    'width'= 1,                 - Pen width
-                    'style'= wx.SOLID,          - wx.Pen style
-                    'legend'= ''                - Line Legend to display
-                    'error'= ''                 - Error bar value:
-                                                  (single (-,+) value or (-,+) array)
-        """
-        PolyPoints.__init__(self, points, attr)
-
-    def draw(self, dc, printerScale, coord= None):
-        colour = self.attributes['colour']
-        width = self.attributes['width'] * printerScale
-        style= self.attributes['style']
-        error= self.attributes['error']
-        pen = wx.Pen(wx.NamedColour(colour), width, style)
-        pen.SetCap(wx.CAP_BUTT)
-        dc.SetPen(pen)
-
-        if coord == None:
-            coord=self.scaled
-            lines= _Numeric.concatenate((coord,coord),axis=1)
-            if error.shape==(2,):
-                lines[:,1]+=error[0]*self.currentScale[1]
-                lines[:,3]+=error[1]*self.currentScale[1]
-            else:
-                lines[:,1]+=error[:,0]*self.currentScale[1]
-                lines[:,3]+=error[:,1]*self.currentScale[1]
-            dc.DrawLineList(lines.astype(_Numeric.Int32))
-        else:
-            dc.DrawLines(coord)
-
-    def getSymExtent(self, printerScale):
-        """Width and Height of Marker"""
-        h= self.attributes['width'] * printerScale
-        w= 5 * h
-        return (w,h)
-
-
 class PolyLine(PolyPoints):
     """Class to define line type and style
         - All methods except __init__ are private.
@@ -2051,37 +1947,6 @@ def _draw7Objects():
     return PlotGraphics([line1,line2], "double log plot", "Value X", "Value Y")
 
 
-def _draw8Objects():
-    # 100 points sin function, plotted as green circles
-    data1 = 2.*_Numeric.pi*_Numeric.arange(200)/200.
-    data1.shape = (100, 2)
-    data1[:,1] = _Numeric.sin(data1[:,0])
-    markers1 = PolyMarker(data1, legend='Green Markers', colour='green', marker='circle',size=1)
-
-    errorbars = PolyErrorBar(data1, legend= 'Error Bars', colour='green',error=_Numeric.array([-0.1,0.1]))
-    error_array=_Numeric.zeros((100,2),_Numeric.Float)
-    #single error value
-    #error_array=Numeric.array([-0.1,0.1])
-    #multiple error values (one for each point)
-    error_array[0:99:2,:]=[-0.1,0.1]
-    error_array[1:100:2,:]=[-0.2,0.2]
-    errorbars = PolyErrorBar(data1, legend= 'Error Bars', colour='green',error=error_array)
-
-    # 50 points cos function, plotted as red line
-    data1 = 2.*_Numeric.pi*_Numeric.arange(100)/100.
-    data1.shape = (50,2)
-    data1[:,1] = _Numeric.cos(data1[:,0])
-    lines = PolyLine(data1, legend= 'Red Line', colour='red')
-    bars = PolyBar(data1, legend= 'Red Bars', colour='red')
-
-    # A few more points...
-    pi = _Numeric.pi
-    markers2 = PolyMarker([(0., 0.), (pi/4., 1.), (pi/2, 0.),
-                          (3.*pi/4., -1)], legend='Cross Legend', colour='blue',
-                          marker='cross')
-    
-    return PlotGraphics([markers1, lines, bars, markers2,errorbars],"Graph Title", "X Axis", "Y Axis")
-
 class TestFrame(wx.Frame):
     def __init__(self, parent, id, title):
         wx.Frame.__init__(self, parent, id, title,
@@ -2122,8 +1987,6 @@ class TestFrame(wx.Frame):
         self.Bind(wx.EVT_MENU,self.OnPlotDraw6, id=260)
         menu.Append(261, 'Draw7', 'Draw plots7')
         self.Bind(wx.EVT_MENU,self.OnPlotDraw7, id=261)
-        menu.Append(262, 'Draw8', 'Draw plots8')
-        self.Bind(wx.EVT_MENU,self.OnPlotDraw8, id=262)
 
         menu.Append(211, '&Redraw', 'Redraw plots')
         self.Bind(wx.EVT_MENU,self.OnPlotRedraw, id=211)
@@ -2281,11 +2144,6 @@ class TestFrame(wx.Frame):
         self.client.setLogScale((True,True))
         self.client.Draw(_draw7Objects())
 
-
-    def OnPlotDraw8(self, event):
-        self.resetDefaults()
-        self.client.Draw(_draw8Objects())
-    
     def OnPlotRedraw(self,event):
         self.client.Redraw()
 
