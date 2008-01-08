@@ -34,7 +34,7 @@
 #   - Added functions GetClosestPoints (all curves) and GetClosestPoint (only closest curve)
 #       can be in either user coords or screen coords.
 #   
-# Feb 19, 2005  Egor Zindy (zindy@mail.com)
+# Feb 19, 2005  Egor Zindy (ezindy@gmail.com)
 #   - Added a PolyBar class
 #   - Added a PolyErrorBar class
 #     PolyErrorBar uses an error attribute which can either be a single [-,+] error defined for
