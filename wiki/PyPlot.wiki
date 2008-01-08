@@ -13,4 +13,10 @@ Anyway, this warrants some screenshots, so here is an antialiased ezplot (compar
 
 [http://ezwidgets.googlecode.com/svn/pics/ezplot.png] [http://ezwidgets.googlecode.com/svn/pics/plot.png]
 
+And in ezplot.py, demo 8 shows error bars:
+
+[http://ezwidgets.googlecode.com/svn/pics/ezplot_errorbars.png]
+
 Code available here: [http://ezwidgets.googlecode.com/svn/trunk/ezplot/]
+  * [http://ezwidgets.googlecode.com/svn/trunk/ezplot/plot.py plot.py] only antialiasing
+  * [http://ezwidgets.googlecode.com/svn/trunk/ezplot/ezplot.py ezplot.py] more of my changes
