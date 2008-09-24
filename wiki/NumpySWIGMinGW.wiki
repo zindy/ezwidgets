@@ -2,17 +2,17 @@
 
 = Introduction =
 
-I had a play with NumPy, SWIG and MinGW and wanted to share my findings.
+I had a play with !NumPy, SWIG and MinGW and wanted to share my findings.
 
 = Details =
 
-First, all the information contained here was first made available by Bill Spotz his book "numpy.i: a SWIG Interface File for NumPy", and the NumPy SVN which can be checked out using the following command:
+First, all the information contained here was first made available by Bill Spotz his book "numpy.i: a SWIG Interface File for !NumPy", and the !NumPy SVN which can be checked out using the following command:
 
 {{{
 svn co http://scipy.org/svn/numpy/trunk numpy
 }}}
 
-The NumPy+SWIG manual is available here:
+The !NumPy+SWIG manual is available here:
 http://scipy.org/svn/numpy/trunk/doc/swig/doc/numpy_swig.pdf
 
 The last example given is for a dot product. I fleshed out the example and wrote a setup.py file (based on the reference setup.py available in http://scipy.org/svn/numpy/trunk/doc/swig/test/ ). My setup.py file will also SWIG the dot.i file.
