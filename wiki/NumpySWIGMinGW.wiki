@@ -6,7 +6,7 @@ I had a play with !NumPy, SWIG and MinGW and wanted to share my findings.
 
 = Details =
 
-First, all the information contained here was first made available by Bill Spotz his book "numpy.i: a SWIG Interface File for !NumPy", and the !NumPy SVN which can be checked out using the following command:
+First, all the information contained here was first made available by Bill Spotz in his book "numpy.i: a SWIG Interface File for !NumPy", and the !NumPy SVN which can be checked out using the following command:
 
 {{{
 svn co http://scipy.org/svn/numpy/trunk numpy
