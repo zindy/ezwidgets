@@ -1,0 +1,148 @@
+#summary NumPy + SWIG + MinGW
+
+= Introduction =
+
+I had a play with NumPy, SWIG and MinGW and wanted to share my findings.
+
+= Details =
+
+First, all the information contained here was first made available by Bill Spotz his book "numpy.i: a SWIG Interface File for NumPy", and the NumPy SVN which can be checked out using the following command:
+
+{{{
+svn co http://scipy.org/svn/numpy/trunk numpy
+}}}
+
+The NumPy+SWIG manual is available here:
+http://scipy.org/svn/numpy/trunk/doc/swig/doc/numpy_swig.pdf
+
+The last example given is for a dot product. I fleshed out the example and wrote a setup.py file (based on the reference setup.py available in http://scipy.org/svn/numpy/trunk/doc/swig/test/ ). My setup.py file will also SWIG the dot.i file.
+
+== The C source (dot.c and dot.h) ==
+
+Here is the dot.h file:
+{{{
+double dot(int len, double* vec1, double* vec2);
+}}}
+
+Here is the dot.c file:
+{{{
+#include <stdio.h>
+#include "dot.h"
+
+double dot(int len, double* vec1, double* vec2)
+{
+    int i;
+    double d;
+
+    d = 0;
+    for(i=0;i<len;i++)
+        d += vec1[i]*vec2[i];
+
+    return d;
+}
+}}}
+
+== The interface files (dot.i and numpy.i) ==
+
+Here is the complete dot.i file:
+{{{
+%module dot
+
+%{
+    #define SWIG_FILE_WITH_INIT
+    #include "dot.h"
+%}
+
+%include "numpy.i"
+
+%init %{
+    import_array();
+%}
+
+%apply (int DIM1, double* IN_ARRAY1) {(int len1, double* vec1), (int len2, double* vec2)}
+
+%include "dot.h"
+%rename (dot) my_dot;
+
+%inline %{
+    double my_dot(int len1, double* vec1, int len2, double* vec2) {
+    if (len1 != len2) {
+        PyErr_Format(PyExc_ValueError, "Arrays of lengths (%d,%d) given", len1, len2);
+        return 0.0;
+    }
+    return dot(len1, vec1, vec2);
+}
+%}
+}}}
+
+You will also need the numpy.i file, which can be obtained from:
+http://scipy.org/svn/numpy/trunk/doc/swig/numpy.i
+
+== Setup file (setup.py) ==
+
+This is the setup.py file:
+{{{
+#! /usr/bin/env python
+
+# System imports
+from distutils.core import *
+from distutils      import sysconfig
+
+# Third-party modules - we depend on numpy for everything
+import numpy
+
+# Obtain the numpy include directory.  This logic works across numpy versions.
+try:
+    numpy_include = numpy.get_include()
+except AttributeError:
+    numpy_include = numpy.get_numpy_include()
+
+# dot extension module
+_dot = Extension("_dot",
+                   ["dot.i","dot.c"],
+                   include_dirs = [numpy_include],
+                   )
+
+# NumyTypemapTests setup
+setup(  name        = "Dot product",
+        description = "Function that performs a dot product (numpy.i: a SWIG Interface File for NumPy)",
+        author      = "Bill Spotz",
+        version     = "1.0",
+        ext_modules = [_dot]
+        )
+}}}
+
+= Compiling the file =
+
+Check that both gcc and SWIG are available (paths known):
+{{{
+swig -version
+}}}
+
+and 
+
+{{{
+gcc -v
+}}}
+
+Both should output some text...
+
+Then the setup command-line is:
+{{{
+python setup.py build --compiler=mingw32
+}}}
+
+If everything goes according to plan, there should be a `_dot.pyd` file available in the `build\lib.win32-2.5` directory.
+
+go in the directory and test the python library (from python):
+{{{
+>>> import numpy
+>>> import dot
+>>> dot.dot([1,2,3],[1,2,3])
+14.0
+}}}
+
+That's all folks! I'll make the files available from the SVN repository ASAP. As usual, comments welcome!
+
+Regards,
+Egor
