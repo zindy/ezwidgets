@@ -47,7 +47,11 @@ python setup.py build --compiler=mingw32
 which handles both the swig part (generation of wrapper C and Python code) and the gcc compilation part. The resulting module (a pyd file) is built in the `build\lib.win32-2.5` directory.
 
 = A simple `ARGOUT_ARRAY1` example =
-This is a re-implementation of the range function. The module is called ezrange.
+This is a re-implementation of the range function. The module is called ezrange. One thing to remember with `ARGOUT_ARRAY1` is that the dimension of the array must be passed from Python.
+
+From Bill Spotz's article: _The python user does not pass these arrays in, they simply get returned. For the case where a dimension is speciﬁed, the python user must provide that dimension as an argument._
+
+This is useful for functions like `numpy.arange(N)`, for which the size of the array is passed to the function. For functions that follow `array_out = function(array_in)`, more work is needed (hopefully will come-up with such an example later). 
 
 == The C source (ezrange.c and ezrange.h) ==
 
