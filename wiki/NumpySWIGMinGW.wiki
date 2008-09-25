@@ -6,7 +6,7 @@ I had a play with !NumPy, SWIG and MinGW and wanted to share my findings.
 
 = Details =
 
-First, all the information contained here was first made available by Bill Spotz in his book "numpy.i: a SWIG Interface File for !NumPy", and the !NumPy SVN which can be checked out using the following command:
+To begin with, all the information contained here was first made available by Bill Spotz in his article "numpy.i: a SWIG Interface File for !NumPy", and the !NumPy SVN which can be checked out using the following command:
 
 {{{
 svn co http://scipy.org/svn/numpy/trunk numpy
@@ -15,7 +15,10 @@ svn co http://scipy.org/svn/numpy/trunk numpy
 The !NumPy+SWIG manual is available here:
 http://scipy.org/svn/numpy/trunk/doc/swig/doc/numpy_swig.pdf
 
-The last example given is for a dot product. I fleshed out the example and wrote a setup.py file (based on the reference setup.py available in http://scipy.org/svn/numpy/trunk/doc/swig/test/ ). My setup.py file will also SWIG the dot.i file.
+The useful files (numpy_swig.pdf and numpy.i) are also available in the numpy source tarball:
+http://sourceforge.net/project/showfiles.php?group_id=1369&package_id=175103
+
+The last example given in Bill Spotz's artice is for a dot product function. I fleshed out the example and wrote a setup.py file (based on the reference setup.py available in http://scipy.org/svn/numpy/trunk/doc/swig/test/ ). My setup.py file will also SWIG the dot.i file.
 
 == The C source (dot.c and dot.h) ==
 
@@ -76,7 +79,7 @@ Here is the complete dot.i file:
 }}}
 
 You will also need the numpy.i file, which can be obtained from:
-http://scipy.org/svn/numpy/trunk/doc/swig/numpy.i
+http://scipy.org/svn/numpy/trunk/doc/swig/numpy.i (or from the numpy tarball)
 
 == Setup file (setup.py) ==
 
@@ -106,7 +109,7 @@ _dot = Extension("_dot",
 # NumyTypemapTests setup
 setup(  name        = "Dot product",
         description = "Function that performs a dot product (numpy.i: a SWIG Interface File for NumPy)",
-        author      = "Bill Spotz",
+        author      = "Egor Zindy (based on the setup.py file available in the numpy tree)",
         version     = "1.0",
         ext_modules = [_dot]
         )
@@ -136,7 +139,6 @@ If everything goes according to plan, there should be a `_dot.pyd` file availabl
 
 go in the directory and test the python library (from python):
 {{{
->>> import numpy
 >>> import dot
 >>> dot.dot([1,2,3],[1,2,3])
 14.0
