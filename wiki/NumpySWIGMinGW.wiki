@@ -247,8 +247,8 @@ If everything goes according to plan, there should be a `_inplace.pyd` file avai
 >>> import inplace
 >>> a = numpy.array([1,2,3],'d')
 >>> inplace.inplace(a)
->>> print a
-array([2, 4, 6])
+>>> a
+array([2., 4., 6.])
 }}}
 
 = Dot product example (from Bill Spotz's article) =
