@@ -1,5 +1,8 @@
 #summary NumPy + SWIG + MinGW
 
+= Content =
+<wiki:toc max_depth="2" />
+
 = Introduction =
 
 I had a play with !NumPy, SWIG and MinGW and wanted to share my findings. The following code is C, rather than C++.
@@ -52,7 +55,7 @@ python setup.py build --compiler=mingw32
 }}}
 which handles both the swig part (generation of wrapper C and Python code) and the gcc compilation part. The resulting module (a pyd file) is built in the `build\lib.win32-2.5` directory.
 
-= A simple `ARGOUT_ARRAY1` example =
+= A simple ARGOUT_ARRAY1 example =
 This is a re-implementation of the range function. The module is called ezrange. One thing to remember with `ARGOUT_ARRAY1` is that the dimension of the array must be passed from Python.
 
 From Bill Spotz's article: _The python user does not pass these arrays in, they simply get returned. For the case where a dimension is speciﬁed, the python user must provide that dimension as an argument._
@@ -156,7 +159,7 @@ array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
 I am not sure which tests are performed in the python wrapper. Could be something important!
 
-= A simple `INPLACE_ARRAY1` example =
+= A simple INPLACE_ARRAY1 example =
 This example doubles the elements of the 1-D array passed to it. The operation is done in-place, which means that the array passed to the function is changed.
 
 == The C source (inplace.c and inplace.h) ==
@@ -251,7 +254,7 @@ If everything goes according to plan, there should be a `_inplace.pyd` file avai
 array([2., 4., 6.])
 }}}
 
-= A simple `ARGOUTVIEW_ARRAY1` example =
+= A simple ARGOUTVIEW_ARRAY1 example =
 This simple cumulative histogram example demonstrates the use of `ARGOUTVIEW_ARRAY1`. Given a histogram, the function returns its cumulative counterpart. Cumulative histogram element i of the cumulative histogram is the sum of all the elements of histogram elements 0 to i (see source code ezcumul.c below).
 
 Please note, Bill Spotz advises against the use of argout_view arrays, unless absolutely necessary:
@@ -432,6 +435,7 @@ Here is the complete dot.i file:
 %}
 
 %apply (int DIM1, double* IN_ARRAY1) {(int len1, double* vec1), (int len2, double* vec2)}
+
 
 %include "dot.h"
 %rename (dot) my_dot;
