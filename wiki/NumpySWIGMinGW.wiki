@@ -255,7 +255,7 @@ array([2., 4., 6.])
 }}}
 
 = A simple ARGOUTVIEW_ARRAY1 example =
-This simple cumulative histogram example demonstrates the use of `ARGOUTVIEW_ARRAY1`. Given a histogram, the function returns its cumulative counterpart. Cumulative histogram element i of the cumulative histogram is the sum of all the elements of histogram elements 0 to i (see source code ezcumul.c below).
+*Warning, memory leak ahead, do not follow this quite yet!* This simple cumulative histogram example demonstrates the use of `ARGOUTVIEW_ARRAY1`. Given a histogram, the function returns its cumulative counterpart. Cumulative histogram element i of the cumulative histogram is the sum of all the elements of histogram elements 0 to i (see source code ezcumul.c below).
 
 Please note, Bill Spotz advises against the use of argout_view arrays, unless absolutely necessary:
 
@@ -269,7 +269,11 @@ Please note, Bill Spotz advises against the use of argout_view arrays, unless ab
 
 Having said that, I don't see how to do the following without using argout_view arrays: returning an array to python when its size is not known in advance. As usual, comments welcome!
 
-Also, I'm not sure how to handle unsuccessful memory allocations. Returning an empty array as below might not be the best option (need to generate an exception instead).
+*Attention!* Python does not take care of memory de-allocation, as stated here: http://blog.enthought.com/?p=62
+
+  The tricky part, however, is memory management. How does the memory get deallocated? The suggestions have always been something similar to “make sure the memory doesn’t get deallocated before the NumPy array disappears.” This is nice advice, but not generally helpful as it basically just tells you to create a memory leak.
+
+Bummer, I don't like memory leaks! Next to that, my next concern seems trivial: I'm not sure how to handle unsuccessful memory allocations. Returning an empty array as below might not be the best option (need to generate an exception instead).
 
 == The C source (ezcumul.c and ezcumul.h) ==
 
