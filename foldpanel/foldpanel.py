@@ -2,12 +2,8 @@
 #Code put in the public domain, for someone else could find a use for it.
 
 import wx
-#import images
+import time
 
-#---------------------------------------------------------------------------
-#following code is normaly hidden in images.py
-#---------------------------------------------------------------------------
-import wx
 from cStringIO import StringIO
 from binascii import a2b_base64
 
@@ -139,6 +135,7 @@ class FoldPanel(wx.Panel,Images):
         self.tpanel.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeave)
 
     def OnEnter(self,event):
+        print time.time(),"enter..."
         if self.txtcolour=="black":
             if self.is_open == 1: bmp = self.bmp_bub
             else: bmp = self.bmp_bdb
@@ -149,6 +146,7 @@ class FoldPanel(wx.Panel,Images):
         self.sb.SetBitmap(bmp)
 
     def OnLeave(self,event):
+        print time.time(),"leave..."
         if self.txtcolour=="black":
             if self.is_open == 1: bmp = self.bmp_bu
             else: bmp = self.bmp_bd
