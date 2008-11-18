@@ -1,0 +1,223 @@
+#summary A Managed Memory proposal for the numpy.i SWIG interface.
+
+= Content =
+<wiki:toc max_depth="2" />
+
+= Introduction =
+
+== Warning ==
+
+First of all, this is a bit temporary, not sure what name to give the new fragment. _ARGOUTVIEWM_? _ARGOUTMVIEW_? _ARGOUTMANAGED_? _ARGOUTMANAGEDVIEW_?
+
+I started using _ARGOUTVIEWM_, so until someone comes-up with a better name, I'll stick with it.
+
+== Where do I get it? ==
+
+numpy.i file available here:
+http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/numpy.i
+
+== What is it? ==
+
+After I tried to write a simple ARGOUTVIEW_ARRAY1 example (see NumpySWIGMinGW), I started wondering about memory deallocation. Turns out a few clever people already did all the thinking (thank you Travis Oliphant - http://blog.enthought.com/?p=62 ) and a few more clever people use this in a swig file (see http://niftilib.sourceforge.net/pynifti, file nifticlib.i).
+
+All this concentrated knowledge helped me implement the ARGOUTVIEWM fragments in numpy.i . All the fragments are there, but only ARGOUTVIEWM_ARRAY1 has been tested.
+
+How to use it? In yourfile.i, the %init function has a few lines added to it:
+
+{{{
+%init %{
+  import_array();
+
+  /* initialize the new Python type for memory deallocation */
+  _MyDeallocType.tp_new = PyType_GenericNew;
+  if (PyType_Ready(&_MyDeallocType) < 0)
+      return;
+%}
+}}}
+... and that's it! then just use ARGOUTVIEWM_ARRAY1 instead of ARGOUTVIEW_ARRAY1 and python does the deallocation for you when the python array is destroyed (see example below).
+
+
+= A simple ARGOUTVIEWM_ARRAY1 example =
+
+The test is to create an N ints array using malloc to allocate the memory, then repetitively create and delete arrays from python.
+
+Using the ARGOUTVIEW_ARRAY1 provided in numpy.i, this will create memory leaks (I know ARGOUTVIEW_ARRAY1 has not been designed for this purpose but it's tempting!).
+
+Using the ARGOUTVIEWM_ARRAY1 fragment instead, the memory allocated with malloc will be automatically deallocated when the array is deleted.
+
+The python test program creates and deletes a 1024^2 ints array 2048 times using both ARGOUTVIEW_ARRAY1 and ARGOUTVIEWM_ARRAY1 and when memory allocation fails, an exception is generated in C and caught in Python, showing which iteration finally caused the allocation to fail.
+
+== The C source (ezalloc.c and ezalloc.h) ==
+
+Here is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/ezalloc.h ezalloc.h] file:
+{{{
+void alloc(int ni, int** veco, int *n);
+}}}
+
+Here is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/ezalloc.c ezalloc.c] file:
+{{{
+#include <stdio.h>
+#include "ezalloc.h"
+
+void alloc(int ni, int** veco, int *n)
+{
+    int *temp;
+    temp = (int *)malloc(ni*sizeof(int));
+
+    if (temp == NULL)
+    {
+        *n = 0;
+    }
+    else
+    {
+        *n = ni;
+    }
+
+    *veco = temp;
+}
+}}}
+
+== The interface file (ezalloc.i) ==
+
+The file (available here: [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/ezalloc.i ezalloc.i]) does a couple of interesting things:
+  * Like I said in the introduction, the init function now also takes care of the memory deallocation.
+  * An interupt is generated when memory allocation fails (not sure I like what I did here, defining the interrupt twice and using the parameters $1, $2 and $3).
+  * two inline functions are created, one using ARGOUTVIEW_ARRAY1 and the other ARGOUTVIEWM_ARRAY1. Both function use alloc (see ezalloc.h and ezalloc.c).
+
+{{{
+%module ezalloc
+%{
+#define SWIG_FILE_WITH_INIT
+#include "ezalloc.h"
+%}
+
+%include "numpy.i"
+
+%init %{
+    import_array();
+
+    /* initialize the new Python type for memory deallocation */
+    _MyDeallocType.tp_new = PyType_GenericNew; 
+    if (PyType_Ready(&_MyDeallocType) < 0) 
+        return;  
+%}
+
+
+%apply (int** ARGOUTVIEWM_ARRAY1, int *DIM1) {(int** veco1, int* n1)}
+%apply (int** ARGOUTVIEW_ARRAY1, int *DIM1) {(int** veco2, int* n2)}
+
+%include "ezalloc.h"
+
+%exception my_alloc1 {
+  $action
+  /* arg1,arg2,arg3 as in the wrapper (hack alert?) */
+  if (*arg3 != arg1)
+  {
+     PyErr_SetString(PyExc_MemoryError,"Not enough memory");
+     return NULL;
+  }
+}
+
+%exception my_alloc2 {
+  $action
+  /* arg1,arg2,arg3 as in the wrapper (hack alert?) */
+  if (*arg3 != arg1)
+  {
+     PyErr_SetString(PyExc_MemoryError,"Not enough memory");
+     return NULL;
+  }
+}
+
+
+%rename (alloc_managed) my_alloc1;
+
+%rename (alloc_leaking) my_alloc2;
+
+%inline %{
+
+void my_alloc1(int ni, int** veco1, int *n1)
+{
+    /* The function... */
+    alloc(ni, veco1, n1);
+}
+
+void my_alloc2(int ni, int** veco2, int *n2)
+{
+    /* The function... */
+    alloc(ni, veco2, n2);
+}
+
+%}
+}}}
+
+Don't forget that you will need my [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/numpy.i numpy.i] file in the same directory for this to compile.
+
+== Setup file (setup_alloc.py) ==
+
+This is my [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/setup_alloc.py setup_alloc.py] file:
+{{{
+#! /usr/bin/env python
+
+# System imports
+from distutils.core import *
+from distutils      import sysconfig
+
+# Third-party modules - we depend on numpy for everything
+import numpy
+
+# Obtain the numpy include directory.  This logic works across numpy versions.
+try:
+    numpy_include = numpy.get_include()
+except AttributeError:
+    numpy_include = numpy.get_numpy_include()
+
+# alloc extension module
+_ezalloc = Extension("_ezalloc",
+                   ["ezalloc.i","ezalloc.c"],
+                   include_dirs = [numpy_include],
+
+                   extra_compile_args = ["--verbose"]
+                   )
+
+# NumyTypemapTests setup
+setup(  name        = "alloc functions",
+        description = "Testing managed arrays",
+        author      = "Egor Zindy",
+        version     = "1.0",
+        ext_modules = [_ezalloc]
+        )
+}}}
+
+== Compiling the module ==
+The setup command-line is (in Windows, using mingw):
+{{{
+python setup_alloc.py build --compiler=mingw32
+}}}
+or in UN*X, simply 
+{{{
+python setup_alloc.py build
+}}}
+
+== Testing the module ==
+If everything goes according to plan, there should be a `_ezalloc.pyd` file available in the `build\lib.win32-2.5` directory. The file needs to be copied in the directory with the `ezalloc.py` file (generated by swig).
+
+Then, a
+{{{
+python test_alloc.py
+}}}
+will produce an output similar to this:
+{{{
+ARGOUTVIEWM_ARRAY1 (managed arrays) - 2048 allocations (4194304 bytes each)
+Done!
+
+ARGOUTVIEW_ARRAY1 (unmanaged, leaking) - 2048 allocations (4194304 bytes each)
+Step 483 failed
+}}}
+
+The unmanaged array leaks memory every time the array object is deleted. The managed one will delete the memory block seamlessly. This was tested both in Windows XP and Linux.
+
+= Conclusion =
+That's all folks! Files are available on the SVN. As usual, comments welcome!
+
+Regards,
+Egor
