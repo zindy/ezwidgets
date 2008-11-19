@@ -60,7 +60,9 @@ This is a re-implementation of the range function. The module is called ezrange.
 
 From Bill Spotz's article: _The python user does not pass these arrays in, they simply get returned. For the case where a dimension is speciﬁed, the python user must provide that dimension as an argument._
 
-This is useful for functions like `numpy.arange(N)`, for which the size of the array is passed to the function. For functions that follow `array_out = function(array_in)`, more work is needed (see `ARGOUTVIEW_ARRAY1` example below). 
+This is useful for functions like `numpy.arange(N)`, for which the size of the returned array is known in advance and passed to the C function.
+
+For functions that follow `array_out = function(array_in)` where the size of array_out is _not_ known in advance and depends on memory allocated in C, see the example given in NumpyManagedMemory. 
 
 == The C source (ezrange.c and ezrange.h) ==
 
@@ -255,8 +257,7 @@ array([2., 4., 6.])
 }}}
 
 = A simple ARGOUTVIEW_ARRAY1 example =
-*Warning, memory leak ahead, do not follow this quite yet!* This simple cumulative histogram example demonstrates the use of `ARGOUTVIEW_ARRAY1`. Given a histogram, the function returns its cumulative counterpart. Cumulative histogram element i of the cumulative histogram is the sum of all the elements of histogram elements 0 to i (see source code ezcumul.c below).
-
+== Big fat multiple warnings ==
 Please note, Bill Spotz advises against the use of argout_view arrays, unless absolutely necessary:
 
   Argoutview arrays are for when your C code provides you with a view of its internal data and does
@@ -267,73 +268,101 @@ Please note, Bill Spotz advises against the use of argout_view arrays, unless ab
   segmentation faults. Nevertheless, there are situations, working with large data sets, where you simply
   have no other choice.
 
-Having said that, I don't see how to do the following without using argout_view arrays: returning an array to python when its size is not known in advance. As usual, comments welcome!
-
-*Attention!* Python does not take care of memory de-allocation, as stated here: http://blog.enthought.com/?p=62
+Python does not take care of memory de-allocation, as stated here: http://blog.enthought.com/?p=62
 
   The tricky part, however, is memory management. How does the memory get deallocated? The suggestions have always been something similar to “make sure the memory doesn’t get deallocated before the NumPy array disappears.” This is nice advice, but not generally helpful as it basically just tells you to create a memory leak.
 
-Bummer, I don't like memory leaks! Next to that, my next concern seems trivial: I'm not sure how to handle unsuccessful memory allocations. Returning an empty array as below might not be the best option (need to generate an exception instead).
+Memory deallocation is also difficult to handle automatically as there is no easy way to do module "finalization". There is a Py_InitModule function, but nothing to handle deletion/destruction/finalization (this will be addressed in Python 3000 as stated in [http://www.python.org/dev/peps/pep-3121/ PEP3121]. In my example, I use the python [http://www.python.org/doc/2.5.2/lib/module-atexit.html module atexit] but there must be a better way.
 
-== The C source (ezcumul.c and ezcumul.h) ==
+Having said that, if you have no other choice, here is an example that uses ARGOUTVIEW_ARRAY1. As usual, comments welcome!
 
-Here is the ezcumul.h file:
+The module declares a block of memory and a couple of functions:
+  * ezview.set_ones() sets all the elements (doubles) in the memory block to one and returns a numpy array that is a VIEW of the memory block.
+  * ezview.get_view() simply returns a view of the memory block.
+  * ezview.finalize() takes care of the memory deallocation (this is the weak part of this example).
+
+== The C source (ezview.c and ezview.h) ==
+
+Here is the ezview.h file:
 {{{
-void cumul(int* veci, int ni, int** veco, int *n);
+void set_ones(double *array, int n);
 }}}
 
-Here is the ezcumul.c file:
+Here is the ezview.c file:
 {{{
 #include <stdio.h>
-#include "ezcumul.h"
+#include <stdlib.h> 
 
-void cumul(int* veci, int ni, int** veco, int *n)
+#include "ezview.h"
+
+void set_ones(double *array, int n)
 {
     int i;
 
-    int *temp;
-
-    temp = (int *)malloc(ni*sizeof(int));
-    if (temp == NULL)
-    {
-        *n = 0;
-        *veco = NULL;
+    if (array == NULL)
         return;
-    }
 
-    temp[0] = veci[0];
-    for (i=1;i<ni;i++)
-    {
-        temp[i]=veci[i]+temp[i-1];
-    }
-
-    *n = ni;
-    *veco = temp;
+    for (i=0;i<n;i++)
+        array[i] = 1.;
 }
 }}}
 
-== The interface file (ezcumul.i) ==
+== The interface file (ezview.i) ==
 {{{
-%module ezcumul
+%module ezview
 
 %{
     #define SWIG_FILE_WITH_INIT
-    #include "ezcumul.h"
+    #include "ezview.h"
+
+    double *my_array = NULL;
+    int my_n = 10;
+
+    void __call_at_begining()
+    {
+        printf("__call_at_begining...\n");
+        my_array = (double *)malloc(my_n*sizeof(double));
+    }
+
+    void __call_at_end(void)
+    {
+        printf("__call_at_end...\n");
+        if (my_array != NULL)
+            free(my_array);
+    }
 %}
 
 %include "numpy.i"
 
 %init %{
     import_array();
+    __call_at_begining();
 %}
 
-%apply (int* IN_ARRAY1, int DIM1) {(int *veci, int ni)}
-%apply (int** ARGOUTVIEW_ARRAY1, int *DIM1) {(int** veco, int* n)}
+%apply (double** ARGOUTVIEW_ARRAY1, int *DIM1) {(double** vec, int* n)}
 
-%include "ezcumul.h"
+%include "ezview.h"
+%rename (set_ones) my_set_ones;
+
+%inline %{
+void finalize(void){
+    __call_at_end();
+}
+
+void get_view(double **vec, int* n) {
+    *vec = my_array;
+    *n = my_n;
+}
+
+void my_set_ones(double **vec, int* n) {
+    set_ones(my_array,my_n);
+    *vec = my_array;
+    *n = my_n;
+}
+%}
 }}}
 
-Don't forget that you will also need the [http://scipy.org/svn/numpy/trunk/doc/swig/numpy.i numpy.i] file in the same directory.
+Don't forget that you will also need the numpy.i file in the same directory.
 
 == Setup file (setup.py) ==
 
@@ -354,18 +383,18 @@ try:
 except AttributeError:
     numpy_include = numpy.get_numpy_include()
 
-# cumul extension module
-_ezcumul = Extension("_ezcumul",
-                   ["ezcumul.i","ezcumul.c"],
+# view extension module
+_ezview = Extension("_ezview",
+                   ["ezview.i","ezview.c"],
                    include_dirs = [numpy_include],
                    )
 
 # NumyTypemapTests setup
-setup(  name        = "cumul function",
-        description = "cumul takes a histogram array and returns a cumulative histogram",
+setup(  name        = "ezview module",
+        description = "ezview provides 3 functions: set_ones(), get_view() and finalize(). set_ones() and get_view() provide a view on a memory block allocated in C, finalize() takes care of the memory deallocation.",
         author      = "Egor Zindy",
         version     = "1.0",
-        ext_modules = [_ezcumul]
+        ext_modules = [_ezview]
         )
 }}}
 
@@ -375,22 +404,59 @@ The setup command-line is:
 python setup.py build --compiler=mingw32
 }}}
 
+If everything goes according to plan, there should be a `_ezview.pyd` file available in the `build\lib.win32-2.5` directory. You will need to copy the file in the same directory as the SWIG generate ezview.py file.
+
 == Testing the module ==
-If everything goes according to plan, there should be a `_ezcumul.pyd` file available in the `build\lib.win32-2.5` directory. Two options: You can copy the file in the directory with the `ezcumul.py` file (generated by swig), in which case, the following will work (in python):
+The test code test_ezview.py follows:
 {{{
->>> import ezcumul
->>> ezcumul.cumul([1,1,1])
-array([1, 2, 3])
-}}}
+import atexit
+import numpy
+print "first message is from __call_at_begining()"
+import ezview
 
-The other option is to go in the `build\lib.win32-2.5` directory and test the python library directly (from python, notice the underscore):
+#There is no easy way to finalize the module (see PEP3121)
+atexit.register(ezview.finalize)
+
+a = ezview.set_ones()
+print "\ncalling ezview.set_ones() - now the memory block is all ones.\nReturned array (a view on the allocated memory block) is:"
+print a
+
+print "\nwe're setting the array using a[:]=arange(a.shape[0])\nThis changes the content of the allocated memory block:"
+a[:] = numpy.arange(a.shape[0])
+print a
+
+print "\nwe're now deleting the array  - this only deletes the view,\nnot the allocated memory!"
+del a
+
+print "\nlet's get a new view on the allocated memory, should STILL contain [0,1,2,3...]"
+b = ezview.get_view()
+print b
+
+print "\nnext message from __call_at_end() - finalize() registered via module atexit"
+}}}
+Launch test_ezview.py and the following will hopefully happen:
 {{{
->>> import _ezcumul
->>> _ezcumul.cumul([1,1,1])
-array([1, 2, 3])
-}}}
+~> python test_ezview.py
+first message is from __call_at_begining()
+__call_at_begining...
 
-I am not sure which tests are performed in the python wrapper. Could be something important!
+calling ezview.set_ones() - now the memory block is all ones.
+Returned array (a view on the allocated memory block) is:
+[ 1.  1.  1.  1.  1.  1.  1.  1.  1.  1.]
+
+we're setting the array using a[:]=arange(a.shape[0])
+This changes the content of the allocated memory block:
+[ 0.  1.  2.  3.  4.  5.  6.  7.  8.  9.]
+
+we're now deleting the array  - this only deletes the view,
+not the allocated memory!
+
+let's get a new view on the allocated memory, should STILL contain [0,1,2,3...]
+[ 0.  1.  2.  3.  4.  5.  6.  7.  8.  9.]
+
+next message from __call_at_end() - finalize() registered via module atexit
+__call_at_end...
+}}}
 
 = Dot product example (from Bill Spotz's article) =
 
