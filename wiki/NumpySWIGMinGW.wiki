@@ -263,18 +263,18 @@ Please note, Bill Spotz advises against the use of argout_view arrays, unless ab
   Argoutview arrays are for when your C code provides you with a view of its internal data and does
   not require any memory to be allocated by the user. This can be dangerous. There is almost no way
   to guarantee that the internal data from the C code will remain in existence for the entire lifetime of
-  the NumPy array that encapsulates it. If the user destroys the object that provides the view of the
-  data before destroying the NumPy array, then using that array my result in bad memory references or
+  the !NumPy array that encapsulates it. If the user destroys the object that provides the view of the
+  data before destroying the !NumPy array, then using that array my result in bad memory references or
   segmentation faults. Nevertheless, there are situations, working with large data sets, where you simply
   have no other choice.
 
 Python does not take care of memory de-allocation, as stated here: http://blog.enthought.com/?p=62
 
-  The tricky part, however, is memory management. How does the memory get deallocated? The suggestions have always been something similar to “make sure the memory doesn’t get deallocated before the NumPy array disappears.” This is nice advice, but not generally helpful as it basically just tells you to create a memory leak.
+  The tricky part, however, is memory management. How does the memory get deallocated? The suggestions have always been something similar to “make sure the memory doesn’t get deallocated before the !NumPy array disappears.” This is nice advice, but not generally helpful as it basically just tells you to create a memory leak.
 
-Memory deallocation is also difficult to handle automatically as there is no easy way to do module "finalization". There is a Py_InitModule function, but nothing to handle deletion/destruction/finalization (this will be addressed in Python 3000 as stated in [http://www.python.org/dev/peps/pep-3121/ PEP3121]. In my example, I use the python [http://www.python.org/doc/2.5.2/lib/module-atexit.html module atexit] but there must be a better way.
+Memory deallocation is also difficult to handle automatically as there is no easy way to do module "finalization". There is a !Py_InitModule() function, but nothing to handle deletion/destruction/finalization (this will be addressed in Python 3000 as stated in [http://www.python.org/dev/peps/pep-3121/ PEP3121]. In my example, I use the python [http://www.python.org/doc/2.5.2/lib/module-atexit.html module atexit] but there must be a better way.
 
-Having said that, if you have no other choice, here is an example that uses ARGOUTVIEW_ARRAY1. As usual, comments welcome!
+Having said all that, if you have no other choice, here is an example that uses ARGOUTVIEW_ARRAY1. As usual, comments welcome!
 
 The module declares a block of memory and a couple of functions:
   * ezview.set_ones() sets all the elements (doubles) in the memory block to one and returns a numpy array that is a VIEW of the memory block.
@@ -444,14 +444,14 @@ calling ezview.set_ones() - now the memory block is all ones.
 Returned array (a view on the allocated memory block) is:
 [ 1.  1.  1.  1.  1.  1.  1.  1.  1.  1.]
 
-we're setting the array using a[:]=arange(a.shape[0])
+we re setting the array using a[:]=arange(a.shape[0])
 This changes the content of the allocated memory block:
 [ 0.  1.  2.  3.  4.  5.  6.  7.  8.  9.]
 
-we're now deleting the array  - this only deletes the view,
+we re now deleting the array  - this only deletes the view,
 not the allocated memory!
 
-let's get a new view on the allocated memory, should STILL contain [0,1,2,3...]
+let s get a new view on the allocated memory, should STILL contain [0,1,2,3...]
 [ 0.  1.  2.  3.  4.  5.  6.  7.  8.  9.]
 
 next message from __call_at_end() - finalize() registered via module atexit
