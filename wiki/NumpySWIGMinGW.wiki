@@ -43,7 +43,7 @@ Both should output some text...
 
 = Modifying the pyfragments.swg file =
 
-This is from my own tests, running SWIG Version 1.3.36 and gcc version 3.4.5 (mingw-vista special r3). I had to remove the 'static' statements from the source, otherwise your SWIGed sources won't comiple. There are only two 'static' statements in the file, both will need to be removed. Here is my modified version: pyfragments.swg
+This is from my own tests, running SWIG Version 1.3.36 and gcc version 3.4.5 (mingw-vista special r3). I had to remove the 'static' statements from the source, otherwise your SWIGed sources won't compile. There are only two 'static' statements in the file, both will need removing. Here is my modified version: [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/pyfragments.swg pyfragments.swg]
 
 = Compilation and testing =
 
@@ -66,12 +66,12 @@ For functions that follow `array_out = function(array_in)` where the size of arr
 
 == The C source (ezrange.c and ezrange.h) ==
 
-Here is the ezrange.h file:
+Here is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/ezrange.h ezrange.h] file:
 {{{
 void range(int *rangevec, int n);
 }}}
 
-Here is the ezrange.c file:
+Here is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/ezrange.c ezrange.c] file:
 {{{
 void range(int *rangevec, int n)
 {
@@ -83,6 +83,8 @@ void range(int *rangevec, int n)
 }}}
 
 == The interface file (ezrange.i) ==
+
+Here is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/ezrange.i ezrange.i] file.
 {{{
 %module ezrange
 
@@ -106,7 +108,7 @@ Don't forget that you will also need the [http://scipy.org/svn/numpy/trunk/doc/s
 
 == Setup file (setup.py) ==
 
-This is my setup.py file:
+This is my [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/setup_range.py setup.py] file:
 {{{
 #! /usr/bin/env python
 
@@ -166,12 +168,12 @@ This example doubles the elements of the 1-D array passed to it. The operation i
 
 == The C source (inplace.c and inplace.h) ==
 
-Here is the inplace.h file:
+Here is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/inplace.h inplace.h] file:
 {{{
 void inplace(double *invec, int n);
 }}}
 
-Here is the inplace.c file:
+Here is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/inplace.c inplace.c] file:
 {{{
 void inplace(double *invec, int n)
 {
@@ -185,6 +187,7 @@ void inplace(double *invec, int n)
 }}}
 
 == The interface file (inplace.i) ==
+Here is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/inplace.i inplace.i] interface file:
 {{{
 %module inplace
 
@@ -206,7 +209,7 @@ void inplace(double *invec, int n)
 
 == Setup file (setup.py) ==
 
-This is my setup.py file:
+This is my [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/setup_inplace.py setup.py] file:
 {{{
 #! /usr/bin/env python
 
@@ -268,7 +271,7 @@ Please note, Bill Spotz advises against the use of argout_view arrays, unless ab
   segmentation faults. Nevertheless, there are situations, working with large data sets, where you simply
   have no other choice.
 
-Python does not take care of memory de-allocation, as stated here: http://blog.enthought.com/?p=62
+Python does not take care of memory de-allocation, as stated here by Travis Oliphant: http://blog.enthought.com/?p=62
 
   The tricky part, however, is memory management. How does the memory get deallocated? The suggestions have always been something similar to “make sure the memory doesn’t get deallocated before the !NumPy array disappears.” This is nice advice, but not generally helpful as it basically just tells you to create a memory leak.
 
@@ -283,12 +286,12 @@ The module declares a block of memory and a couple of functions:
 
 == The C source (ezview.c and ezview.h) ==
 
-Here is the ezview.h file:
+Here is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/ezview.h ezview.h] file:
 {{{
 void set_ones(double *array, int n);
 }}}
 
-Here is the ezview.c file:
+Here is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/ezview.c ezview.c] file:
 {{{
 #include <stdio.h>
 #include <stdlib.h> 
@@ -308,6 +311,8 @@ void set_ones(double *array, int n)
 }}}
 
 == The interface file (ezview.i) ==
+
+Here is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/ezview.i ezview.i] interface file:
 {{{
 %module ezview
 
@@ -366,7 +371,7 @@ Don't forget that you will also need the numpy.i file in the same directory.
 
 == Setup file (setup.py) ==
 
-This is my setup.py file:
+This is my [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/setup_ezview.py setup.py] file:
 {{{
 #! /usr/bin/env python
 
@@ -407,7 +412,7 @@ python setup.py build --compiler=mingw32
 If everything goes according to plan, there should be a `_ezview.pyd` file available in the `build\lib.win32-2.5` directory. You will need to copy the file in the same directory as the SWIG generate ezview.py file.
 
 == Testing the module ==
-The test code test_ezview.py follows:
+The test code [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/test_ezview.py test_ezview.py] follows:
 {{{
 import atexit
 import numpy
@@ -464,12 +469,12 @@ The last example given in Bill Spotz's artice is for a dot product function. Her
 
 == The C source (dot.c and dot.h) ==
 
-Here is the dot.h file:
+Here is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/dot.h dot.h] file:
 {{{
 double dot(int len, double* vec1, double* vec2);
 }}}
 
-Here is the dot.c file:
+Here is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/dot.c dot.c] file:
 {{{
 #include <stdio.h>
 #include "dot.h"
@@ -489,7 +494,7 @@ double dot(int len, double* vec1, double* vec2)
 
 == The interface files (dot.i and numpy.i) ==
 
-Here is the complete dot.i file:
+Here is the complete [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/dot.i dot.i] file:
 {{{
 %module dot
 
@@ -523,7 +528,7 @@ Here is the complete dot.i file:
 
 == Setup file (setup.py) ==
 
-This is the setup.py file:
+This is the [http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/setup_dot.py setup.py] file:
 {{{
 #! /usr/bin/env python
 
