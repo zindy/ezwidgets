@@ -19,9 +19,12 @@
  * Implementation inspired by nifticlib.i, implemented
  * in numpy.i by Egor Zindy.
  *
- * define a new python object type that performs the array
- * data de-allocation when the ref count goes to zero
+ * define an import_managed() routine and a new python
+ * object type that performs the array data de-allocation
+ * when the ref count goes to zero
  */
+%#define import_managed() { _MyDeallocType.tp_new = PyType_GenericNew; if (PyType_Ready(&_MyDeallocType) < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "Custom memory management failed to initialize (numpy.i)"); } }
+
 typedef struct
 {
   PyObject_HEAD
@@ -40,6 +43,7 @@ static PyTypeObject _MyDeallocType = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Py_TPFLAGS_DEFAULT,
   "Internal deallocator object",
 };
+
 }
 
 /**********************************************************************/
