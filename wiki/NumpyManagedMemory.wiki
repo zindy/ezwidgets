@@ -13,7 +13,7 @@ I started using _ARGOUTVIEWM_, so until someone comes-up with a better name, I'l
 
 == Where do I get it? ==
 
-numpy.i file available here:
+My modified numpy.i file is available here:
 http://code.google.com/p/ezwidgets/source/browse/trunk/numpy/numpy.i
 
 == What is it? ==
@@ -22,22 +22,30 @@ After I tried to write a simple ARGOUTVIEW_ARRAY1 example (see NumpySWIGMinGW), 
 
 All this concentrated knowledge helped me implement the ARGOUTVIEWM fragments in numpy.i . All the fragments are there, but only ARGOUTVIEWM_ARRAY1 has been tested.
 
-How to use it? In yourfile.i, the %init function has a single line added to it, a call to `import_managed()`:
+How to use it? In yourfile.i, the %init function uses the same `import_array()` call you already know:
 
 {{{
 %init %{
-    /* initialize the NumPy module */
     import_array();
-
-    /* initialize the managed memory allocation/deallocation */
-    import_managed();
 %}
 }}}
-... and that's it! then just use ARGOUTVIEWM_ARRAY1 instead of ARGOUTVIEW_ARRAY1 and python does the deallocation for you when the python array is destroyed (see example below).
 
-*Please note:* If you forget to call `import_managed()`, your python program will segfault when trying to delete the managed array (e.g. in the example below, the `del a` line would produce a segfault without a call to `import_managed()`).
+... then just use ARGOUTVIEWM_ARRAY1 instead of ARGOUTVIEW_ARRAY1 and python does the deallocation for you when the python array is destroyed (see example below).
 
-Also, if for some reason the custom memory allocation/deallocation fails to initialize, the following error is produced (exception raised from the C side):
+*Please note:* in the latest numpy.i file, the original `import_array()` is redefined to include the custom memory deallocation written by Travis:
+
+{{{
+%#undef import_array
+%#define import_array() {if (_import_array() < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import"); return; }; _MyDeallocType.tp_new = PyType_GenericNew; if (PyType_Ready(&_MyDeallocType) < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "Custom memory management failed to initialize (numpy.i)"); return; }  }
+
+%#undef import_array1
+%#define import_array1(ret) {if (_import_array() < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import"); return ret; }; _MyDeallocType.tp_new = PyType_GenericNew; if (PyType_Ready(&_MyDeallocType) < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "Custom memory management failed to initialize (numpy.i)"); return ret; }  }
+
+%#undef import_array2
+%#define import_array2(msg, ret) {if (_import_array() < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, msg); return ret; }; _MyDeallocType.tp_new = PyType_GenericNew; if (PyType_Ready(&_MyDeallocType) < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, msg); return ret; } }
+}}}
+
+Also, if for some reason the custom memory allocation/deallocation fails to initialize, the following error is produced (when using `import_array()` - exception raised from the C side):
 
 {{{
 $> python test_alloc.py 
@@ -107,11 +115,7 @@ The file (available here: [http://code.google.com/p/ezwidgets/source/browse/trun
 %include "numpy.i"
 
 %init %{
-    /* initialize the NumPy module */
     import_array();
-
-    /* initialize the managed memory allocation/deallocation */
-    import_managed();
 %}
 
 
