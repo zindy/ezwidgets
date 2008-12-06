@@ -7,11 +7,7 @@
 %include "numpy.i"
 
 %init %{
-    /* initialize the NumPy module */
     import_array();
-
-    /* initialize the managed memory allocation/deallocation */
-    import_managed();
 %}
 
 

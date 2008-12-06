@@ -23,7 +23,15 @@
  * object type that performs the array data de-allocation
  * when the ref count goes to zero
  */
-%#define import_managed() { _MyDeallocType.tp_new = PyType_GenericNew; if (PyType_Ready(&_MyDeallocType) < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "Custom memory management failed to initialize (numpy.i)"); } }
+
+%#undef import_array
+%#define import_array() {if (_import_array() < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import"); return; }; _MyDeallocType.tp_new = PyType_GenericNew; if (PyType_Ready(&_MyDeallocType) < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "Custom memory management failed to initialize (numpy.i)"); return; }  }
+
+%#undef import_array1
+%#define import_array1(ret) {if (_import_array() < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import"); return ret; }; _MyDeallocType.tp_new = PyType_GenericNew; if (PyType_Ready(&_MyDeallocType) < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "Custom memory management failed to initialize (numpy.i)"); return ret; }  }
+
+%#undef import_array2
+%#define import_array2(msg, ret) {if (_import_array() < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, msg); return ret; }; _MyDeallocType.tp_new = PyType_GenericNew; if (PyType_Ready(&_MyDeallocType) < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, msg); return ret; } }
 
 typedef struct
 {
