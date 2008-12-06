@@ -7,12 +7,11 @@
 %include "numpy.i"
 
 %init %{
+    /* initialize the NumPy module */
     import_array();
 
-    /* initialize the new Python type for memory deallocation */
-    _MyDeallocType.tp_new = PyType_GenericNew; 
-    if (PyType_Ready(&_MyDeallocType) < 0) 
-        return;  
+    /* initialize the managed memory allocation/deallocation */
+    import_managed();
 %}
 
 
