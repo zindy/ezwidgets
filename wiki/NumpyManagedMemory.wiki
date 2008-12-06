@@ -22,21 +22,32 @@ After I tried to write a simple ARGOUTVIEW_ARRAY1 example (see NumpySWIGMinGW), 
 
 All this concentrated knowledge helped me implement the ARGOUTVIEWM fragments in numpy.i . All the fragments are there, but only ARGOUTVIEWM_ARRAY1 has been tested.
 
-How to use it? In yourfile.i, the %init function has a few lines added to it:
+How to use it? In yourfile.i, the %init function has a single line added to it, a call to `import_managed()`:
 
 {{{
 %init %{
-  import_array();
+    /* initialize the NumPy module */
+    import_array();
 
-  /* initialize the new Python type for memory deallocation */
-  _MyDeallocType.tp_new = PyType_GenericNew;
-  if (PyType_Ready(&_MyDeallocType) < 0)
-      return;
+    /* initialize the managed memory allocation/deallocation */
+    import_managed();
 %}
 }}}
 ... and that's it! then just use ARGOUTVIEWM_ARRAY1 instead of ARGOUTVIEW_ARRAY1 and python does the deallocation for you when the python array is destroyed (see example below).
 
-*Please note:* If you forget to add the new lines in init, your python program will segfault when trying to delete the managed array (example below, the `del a` line).
+*Please note:* If you forget to call `import_managed()`, your python program will segfault when trying to delete the managed array (e.g. in the example below, the `del a` line would produce a segfault without a call to `import_managed()`).
+
+Also, if for some reason the custom memory allocation/deallocation fails to initialize, the following error is produced (exception raised from the C side):
+
+{{{
+$> python test_alloc.py 
+Traceback (most recent call last):
+  File "test_alloc.py", line 1, in <module>
+    import ezalloc
+  File "/home/zindy/projects/ezalloc/ezalloc.py", line 7, in <module>
+    import _ezalloc
+ImportError: Custom memory management failed to initialize (numpy.i)
+}}}
 
 
 = A simple ARGOUTVIEWM_ARRAY1 example =
@@ -96,12 +107,11 @@ The file (available here: [http://code.google.com/p/ezwidgets/source/browse/trun
 %include "numpy.i"
 
 %init %{
+    /* initialize the NumPy module */
     import_array();
 
-    /* initialize the new Python type for memory deallocation */
-    _MyDeallocType.tp_new = PyType_GenericNew; 
-    if (PyType_Ready(&_MyDeallocType) < 0) 
-        return;  
+    /* initialize the managed memory allocation/deallocation */
+    import_managed();
 %}
 
 
@@ -193,11 +203,11 @@ setup(  name        = "alloc functions",
 == Compiling the module ==
 The setup command-line is (in Windows, using mingw):
 {{{
-python setup_alloc.py build --compiler=mingw32
+$> python setup_alloc.py build --compiler=mingw32
 }}}
 or in UN*X, simply 
 {{{
-python setup_alloc.py build
+$> python setup_alloc.py build
 }}}
 
 == Testing the module ==
@@ -247,7 +257,7 @@ if err == 0:
 
 Then, a
 {{{
-python test_alloc.py
+$> python test_alloc.py
 }}}
 will produce an output similar to this:
 {{{
@@ -262,28 +272,6 @@ The unmanaged array leaks memory every time the array object is deleted. The man
 
 = Conclusion and comments =
 That's all folks! Files are available on the SVN. As usual, comments welcome!
-
-I've been using this for a couple of weeks now and it's sometimes easy to forget to add the lines 
-
-{{{
-  /* initialize the new Python type for memory deallocation */
-  _MyDeallocType.tp_new = PyType_GenericNew;
-  if (PyType_Ready(&_MyDeallocType) < 0)
-      return;
-}}}
-
-in the `init()` function. When this happens, memory deallocation causes a segfault. Maybe this code should be hidden in a `import_managed()`, same as `import_array()` ? The `init()` function would then look a lot less cryptic:
-
-{{{
-%init %{
-    /* initialize the NumPy module */
-    import_array();
-
-    /* initialize managed memory allocation/deallocation */
-    import_managed();
-%}
-}}}
-
 
 Regards,
 Egor
