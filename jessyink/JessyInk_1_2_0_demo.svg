@@ -30,18 +30,25 @@
      objecttolerance="10"
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.72005208"
-     inkscape:cx="341.4414"
+     inkscape:zoom="0.50915371"
+     inkscape:cx="537.00855"
      inkscape:cy="384"
      inkscape:document-units="px"
-     inkscape:current-layer="layer23"
+     inkscape:current-layer="layer15"
      width="1024px"
      height="768px"
-     inkscape:window-width="1280"
-     inkscape:window-height="975"
-     inkscape:window-x="-4"
-     inkscape:window-y="-4"
-     showgrid="false" />
+     inkscape:window-width="1024"
+     inkscape:window-height="719"
+     inkscape:window-x="0"
+     inkscape:window-y="22"
+     showgrid="false"
+     showguides="true"
+     inkscape:guide-bbox="true">
+    <sodipodi:guide
+       orientation="0,1"
+       position="-214.08073,697.23542"
+       id="guide4320" />
+  </sodipodi:namedview>
   <defs
      id="defs2203">
     <linearGradient
@@ -4900,7 +4907,6 @@
   </metadata>
   <g
      jessyink:masterSlide="masterSlide"
-     sodipodi:insensitive="true"
      style="display:inline"
      inkscape:label="MASTER"
      inkscape:groupmode="layer"
@@ -4953,6 +4959,43 @@
          sodipodi:role="line"
          name="slideTitle"
          id="tspan3704">MASTER SLIDE</tspan></text>
+    <text
+       y="69.729065"
+       xml:space="preserve"
+       x="928.9281"
+       style="font-size:32px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:end;line-height:125%;writing-mode:lr-tb;text-anchor:end;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Helvetica Neue;-inkscape-font-specification:Helvetica Neue"
+       sodipodi:linespacing="125%"
+       id="text17867"><tspan
+         jessyink:autoText="slideNumber"
+         y="69.729065"
+         x="928.9281"
+         sodipodi:role="line"
+         name="slideNumber"
+         id="tspan17869">XX</tspan></text>
+    <text
+       y="69.729065"
+       xml:space="preserve"
+       x="936.2951"
+       style="font-size:32px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Helvetica Neue;-inkscape-font-specification:Helvetica Neue"
+       sodipodi:linespacing="125%"
+       id="text17871"><tspan
+         y="69.729065"
+         x="936.2951"
+         sodipodi:role="line"
+         id="tspan17873">/</tspan></text>
+    <text
+       y="69.729065"
+       xml:space="preserve"
+       x="954.08899"
+       style="font-size:32px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Helvetica Neue;-inkscape-font-specification:Helvetica Neue"
+       sodipodi:linespacing="125%"
+       id="text17875"><tspan
+         jessyink:autoText="numberOfSlides"
+         y="69.729065"
+         x="954.08899"
+         sodipodi:role="line"
+         name="numberOfSlides"
+         id="tspan17877">XX</tspan></text>
   </g>
   <g
      sodipodi:insensitive="true"
@@ -11253,11 +11296,10 @@
          id="tspan4811">request, the &quot;auto-texts&quot; feature originated.</tspan></text>
   </g>
   <g
-     style="display:none"
+     style="display:inline"
      inkscape:label="Auto-texts (continued)"
      inkscape:groupmode="layer"
-     id="layer12"
-     sodipodi:insensitive="true">
+     id="layer12">
     <g
        transform="translate(-12,-6.3006586)"
        id="g8678">
@@ -12033,6 +12075,7 @@ var INDEX_OFFSET = 0;
 var STATE_START = -1;
 var STATE_END = -2;
 var slides = new Array();
+var TITLE_NODE;
 
 // Initialisation.
 var currentMode = SLIDE_MODE;
@@ -12059,6 +12102,11 @@ function jessyInkInit()
 	// not lead to any problems, but it takes more time.
 	if (jessyInkInitialised)
 		return;
+
+        // Creating the title node.
+        TITLE_NODE = document.createElementNS(NSS[&quot;svg&quot;], &quot;title&quot;);
+        TITLE_NODE.appendChild(document.createTextNode(&quot;&quot;));
+        ROOT_NODE.appendChild(TITLE_NODE);
 
 	// Making the presentation scaleable.
 	ROOT_NODE.setAttribute(&quot;width&quot;, &quot;100%&quot;);
@@ -12152,7 +12200,12 @@ function jessyInkInit()
 	{
 		var node = document.getElementById(tempSlides[counter]);
 		slides[counter] = new Object();
+
+		// Set node.
 		slides[counter][&quot;element&quot;] = node;
+
+                // Set name.
+                slides[counter][&quot;label&quot;] = node.getAttributeNS(NSS[&quot;inkscape&quot;], &quot;label&quot;);
 
 		// Set build in transition.
 		slides[counter][&quot;transitionIn&quot;] = new Object();
@@ -12286,8 +12339,17 @@ function jessyInkInit()
 	}
 	
 	setSlideToState(activeSlide, STATE_START);
+	setActiveSlideTitle();
 
 	jessyInkInitialised = true;
+}
+
+/** Convenience function to set the title.
+ *	This function displays the title of the active slide
+ */
+function setActiveSlideTitle()
+{
+	TITLE_NODE.firstChild.data = slides[activeSlide][&quot;label&quot;];
 }
 
 /** Function to subtitute the auto-texts.
@@ -12447,6 +12509,8 @@ function changeSlide(dir)
 	else
 		setSlideToState(activeSlide, STATE_START);
 
+	setActiveSlideTitle();
+
 	transCounter = 0;
 	startTime = (new Date()).getTime();
 	lastFrameTime = startTime;
@@ -12577,6 +12641,8 @@ function indexSetActiveSlide(nbr)
 	activeSlide = nbr;
 	slides[activeSlide][&quot;element&quot;].setAttribute(&quot;opacity&quot;,1);
 	window.location.hash = activeSlide + 1;
+
+	setActiveSlideTitle();
 }
 
 /** Function to set the active slide in the index view. Position kept if possible
@@ -12608,37 +12674,8 @@ function indexSetActiveSlidePageJump(nbr)
 	activeSlide = nbr;
 	slides[activeSlide][&quot;element&quot;].setAttribute(&quot;opacity&quot;,1);
 	window.location.hash = activeSlide + 1;
-}
 
-/** Function to set the active slide in the index view. Position kept if possible
- *
- *  @param nbr index of the active slide
- */
-function indexSetActiveSlidePageJump(nbr)
-{
-	if (nbr &gt;= slides.length)
-		nbr = slides.length - 1;
-	else if (nbr &lt; 0)
-		nbr = 0;
-
-	slides[activeSlide][&quot;element&quot;].setAttribute(&quot;opacity&quot;,0.5);
-	if (nbr &lt; INDEX_OFFSET)
-	{
-		INDEX_OFFSET -= INDEX_COLUMNS * INDEX_COLUMNS;
-		if (INDEX_OFFSET &lt; 0)
-			INDEX_OFFSET = 0;
-	}
-	else if (nbr &gt; (INDEX_OFFSET + INDEX_COLUMNS * INDEX_COLUMNS - 1))
-	{
-		INDEX_OFFSET += INDEX_COLUMNS * INDEX_COLUMNS;
-		if (INDEX_OFFSET &gt;= slides.length)
-			INDEX_OFFSET = slides.length-1;
-	}
-
-	displayIndex(INDEX_OFFSET);
-	activeSlide = nbr;
-	slides[activeSlide][&quot;element&quot;].setAttribute(&quot;opacity&quot;,1);
-	window.location.hash = activeSlide + 1;
+	setActiveSlideTitle();
 }
 
 /** Event handler for key press.
@@ -12701,6 +12738,8 @@ function keypress(e)
 			}
 			else if (currentMode == INDEX_MODE)
 				indexSetActiveSlide(0);
+
+			setActiveSlideTitle();
 		}
 		else if (e.keyCode == END_KEY)
 		{
@@ -12723,6 +12762,8 @@ function keypress(e)
 			}
 			else if (currentMode == INDEX_MODE)
 				indexSetActiveSlide(slides.length - 1);
+
+			setActiveSlideTitle();
 		}
 		else if (e.keyCode == PAGE_UP_KEY )
 		{
