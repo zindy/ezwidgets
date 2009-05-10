@@ -30,7 +30,9 @@ NSS['jessyink']='https://launchpad.net/jessyink';
 // Keycodes.
 var MINUS_KEY = 109;
 var EQUAL_KEY = 107; //on UK keyboards, this the plus key is equal + shift
-var EQUAL_KEY_OPERA = 61; //on UK keyboards, this the plus key is equal + shift
+var EQUAL_KEY_OPERA = 61;
+var MINUS_KEY_SAFARI = 189;
+var EQUAL_KEY_SAFARI = 187;
 var SPACE_KEY = 32;
 var PAGE_UP_KEY = 33;
 var PAGE_DOWN_KEY = 34;
@@ -761,7 +763,7 @@ function keypress(e)
 			else if (currentMode == INDEX_MODE)
 				indexSetActiveSlidePageJump(activeSlide + INDEX_COLUMNS * INDEX_COLUMNS);
 		}
-		else if ((e.keyCode == EQUAL_KEY || e.keyCode == EQUAL_KEY_OPERA) && currentMode == INDEX_MODE)
+		else if ((e.keyCode == EQUAL_KEY || e.keyCode == EQUAL_KEY_SAFARI || e.keyCode == EQUAL_KEY_OPERA) && currentMode == INDEX_MODE)
 		{
 			if (INDEX_COLUMNS >=3)
 			{
@@ -769,7 +771,7 @@ function keypress(e)
 				indexSetActiveSlide(activeSlide);
 			}
 		}
-		else if (e.keyCode == MINUS_KEY && currentMode == INDEX_MODE)
+		else if ((e.keyCode == MINUS_KEY || e.keyCode == MINUS_KEY_SAFARI) && currentMode == INDEX_MODE)
 		{
 			if (INDEX_COLUMNS <7)
 			{
