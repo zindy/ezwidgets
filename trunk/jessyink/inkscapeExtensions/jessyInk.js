@@ -58,6 +58,7 @@ var INDEX_OFFSET = 0;
 var STATE_START = -1;
 var STATE_END = -2;
 var slides = new Array();
+var TITLE_NODE;
 
 // Initialisation.
 var currentMode = SLIDE_MODE;
@@ -84,6 +85,11 @@ function jessyInkInit()
 	// not lead to any problems, but it takes more time.
 	if (jessyInkInitialised)
 		return;
+
+        // Creating the title node.
+        TITLE_NODE = document.createElementNS(NSS["svg"], "title");
+        TITLE_NODE.appendChild(document.createTextNode(""));
+        ROOT_NODE.appendChild(TITLE_NODE);
 
 	// Making the presentation scaleable.
 	ROOT_NODE.setAttribute("width", "100%");
@@ -177,7 +183,12 @@ function jessyInkInit()
 	{
 		var node = document.getElementById(tempSlides[counter]);
 		slides[counter] = new Object();
+
+		// Set node.
 		slides[counter]["element"] = node;
+
+                // Set name.
+                slides[counter]["label"] = node.getAttributeNS(NSS["inkscape"], "label");
 
 		// Set build in transition.
 		slides[counter]["transitionIn"] = new Object();
@@ -311,8 +322,17 @@ function jessyInkInit()
 	}
 	
 	setSlideToState(activeSlide, STATE_START);
+	setActiveSlideTitle();
 
 	jessyInkInitialised = true;
+}
+
+/** Convenience function to set the title.
+ *	This function displays the title of the active slide
+ */
+function setActiveSlideTitle()
+{
+	TITLE_NODE.firstChild.data = slides[activeSlide]["label"];
 }
 
 /** Function to subtitute the auto-texts.
@@ -472,6 +492,8 @@ function changeSlide(dir)
 	else
 		setSlideToState(activeSlide, STATE_START);
 
+	setActiveSlideTitle();
+
 	transCounter = 0;
 	startTime = (new Date()).getTime();
 	lastFrameTime = startTime;
@@ -602,6 +624,8 @@ function indexSetActiveSlide(nbr)
 	activeSlide = nbr;
 	slides[activeSlide]["element"].setAttribute("opacity",1);
 	window.location.hash = activeSlide + 1;
+
+	setActiveSlideTitle();
 }
 
 /** Function to set the active slide in the index view. Position kept if possible
@@ -633,37 +657,8 @@ function indexSetActiveSlidePageJump(nbr)
 	activeSlide = nbr;
 	slides[activeSlide]["element"].setAttribute("opacity",1);
 	window.location.hash = activeSlide + 1;
-}
 
-/** Function to set the active slide in the index view. Position kept if possible
- *
- *  @param nbr index of the active slide
- */
-function indexSetActiveSlidePageJump(nbr)
-{
-	if (nbr >= slides.length)
-		nbr = slides.length - 1;
-	else if (nbr < 0)
-		nbr = 0;
-
-	slides[activeSlide]["element"].setAttribute("opacity",0.5);
-	if (nbr < INDEX_OFFSET)
-	{
-		INDEX_OFFSET -= INDEX_COLUMNS * INDEX_COLUMNS;
-		if (INDEX_OFFSET < 0)
-			INDEX_OFFSET = 0;
-	}
-	else if (nbr > (INDEX_OFFSET + INDEX_COLUMNS * INDEX_COLUMNS - 1))
-	{
-		INDEX_OFFSET += INDEX_COLUMNS * INDEX_COLUMNS;
-		if (INDEX_OFFSET >= slides.length)
-			INDEX_OFFSET = slides.length-1;
-	}
-
-	displayIndex(INDEX_OFFSET);
-	activeSlide = nbr;
-	slides[activeSlide]["element"].setAttribute("opacity",1);
-	window.location.hash = activeSlide + 1;
+	setActiveSlideTitle();
 }
 
 /** Event handler for key press.
@@ -726,6 +721,8 @@ function keypress(e)
 			}
 			else if (currentMode == INDEX_MODE)
 				indexSetActiveSlide(0);
+
+			setActiveSlideTitle();
 		}
 		else if (e.keyCode == END_KEY)
 		{
@@ -748,6 +745,8 @@ function keypress(e)
 			}
 			else if (currentMode == INDEX_MODE)
 				indexSetActiveSlide(slides.length - 1);
+
+			setActiveSlideTitle();
 		}
 		else if (e.keyCode == PAGE_UP_KEY )
 		{
