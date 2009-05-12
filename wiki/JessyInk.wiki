@@ -1,0 +1,87 @@
+#summary Ideas on the JessyInk Inkscape extension
+
+= Introduction =
+
+These are my additions to the [https://launchpad.net/jessyink JessyInk] extension. Nothing exciting, just some random ideas I thought might be useful, and then had great fun implementing.
+
+= !JessyInk navigation =
+
+Bulk of my additions: added a few navigational shortcuts to make my life easier. Listed here are _all_ the navigational shortcuts available, as of version 1.2.0 (yet to be released).
+
+== In slide mode ==
+
+Moving backward and forward using set transitions:
+  * *space* and *left click* move to the next slide
+  * *left* and *right* move back and forward one slide
+
+Moving backward and forward without transitions:
+  * *up* and *down* move back and forward one slide
+  * *page up* and *page down* move back and forward one slide
+  * *scroll wheel up* and *scroll wheel down* move back and forward one slide
+
+Switching to index mode:
+  * *i* toggles from _slide_ to _index_ mode
+
+== In index mode ==
+
+Zooming in and out:
+  * *-* zoom out (display more slides)
+  * *+* or *=* zoom in (display less slides)
+
+Moving around:
+  * *up*, *down*, *left*, *right* arrows to select a slide
+  * *page up* and *page down* move back and forward one page
+  * *scroll wheel up* and *scroll wheel down* move back and forward one page
+
+Selecting a slide:
+  * *i* or *enter* toggles from _index_ to _slide_ mode, selecting the highlighted slide
+  * *left click* selects a slide
+
+== Issues ==
+
+Currently, clicking on a slide in index mode causes problems. You can click on a slide, but then the mouse wheel events stop working. The anchor part of the URL gets messed-up too: an extra "1" is added to the anchor. Not sure why...
+
+= Titles =
+
+Would be nice to be able to set slides titles (code tentatively scheduled for revision 1.3.0). Hannes Hochreiner had a go, and his current effort works in Safari but not in Opera or Firefox. No crashes though, which is always a bonus!
+
+Hannes's work can be found in the [https://code.launchpad.net/~hannes-hochreiner/jessyink/set-page-title set-page-title] branch. Latest idea is to
+
+  _implement page titles using title tags in the svg tag. Works in Safari, but not in !FireFox and Opera. However, does not cause error, when it fails._
+
+I tried using a
+{{{
+<title id='title'>This is the title</title>
+}}}
+tag in the SVG document, which displays a title, but I can't seem to be able to change it. My idea was to define a
+{{{
+var TITLE = document.getElementById(&quot;title&quot;);
+}}}
+and then maybe use a
+{{{
+function update(e)
+{
+    TITLE.data = slides[activeSlide][&quot;label&quot;];
+}
+}}}
+
+Like I said... just an idea :-)
+
+= My code so far=
+
+My current musings are available from the googlecode SVN (until we merge all the changes back into the main !JessyInk tree in June):
+
+http://code.google.com/p/ezwidgets/source/browse/#svn/trunk/jessyink
+
+= Example presentation =
+
+An example presentation (using my modified extension) is available here:
+
+http://ezwidgets.googlecode.com/svn/trunk/jessyink/JessyInk_1_2_0_demo.svg
+
+= Conclusion =
+
+This concludes my !JessyInk effort. If you would like to leave a message, I'll be glad to read it. Code reviews / contributions / ideas are most welcome. Hopefully in a couple of weeks, the new (working) additions will be merged in !JessyInk.
+
+Regards,
+Egor
