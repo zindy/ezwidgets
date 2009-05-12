@@ -12076,6 +12076,7 @@ var STATE_START = -1;
 var STATE_END = -2;
 var slides = new Array();
 var TITLE_NODE;
+var TITLE = document.getElementById(&quot;title&quot;);
 
 // Initialisation.
 var currentMode = SLIDE_MODE;
@@ -12204,8 +12205,8 @@ function jessyInkInit()
 		// Set node.
 		slides[counter][&quot;element&quot;] = node;
 
-                // Set name.
-                slides[counter][&quot;label&quot;] = node.getAttributeNS(NSS[&quot;inkscape&quot;], &quot;label&quot;);
+        // Set name.
+        slides[counter][&quot;label&quot;] = node.getAttributeNS(NSS[&quot;inkscape&quot;], &quot;label&quot;);
 
 		// Set build in transition.
 		slides[counter][&quot;transitionIn&quot;] = new Object();
@@ -12264,6 +12265,11 @@ function jessyInkInit()
 			node.style.display = &quot;none&quot;;
 			node.setAttribute(&quot;opacity&quot;,0);
 		}
+
+        // Add the mouse click event
+        // node.onclick = mouseclick;
+        node.addEventListener('click',mouseclick,false)
+        node.setAttribute(&quot;nbr&quot;,counter);
 
 		// Set effects.
 		var tempEffects = new Array();
@@ -12350,7 +12356,16 @@ function jessyInkInit()
 function setActiveSlideTitle()
 {
 	TITLE_NODE.firstChild.data = slides[activeSlide][&quot;label&quot;];
+    //update();
 }
+
+function update(e)
+{
+    TITLE.data = slides[activeSlide][&quot;label&quot;];
+}
+
+//TITLE.addEventListener(&quot;DOMCharacterDataModified&quot;, update, false);
+
 
 /** Function to subtitute the auto-texts.
  *
@@ -12867,6 +12882,9 @@ function mouseclick(e)
 	else if (e.which)
 		value = e.which;
 
+    var id = this.getAttribute(&quot;nbr&quot;);
+    window.status = id + &quot; &quot; + value;
+
 	if (value == 1)
 	{
 		if (currentMode == SLIDE_MODE)
@@ -12875,19 +12893,17 @@ function mouseclick(e)
 		}
 		else if (currentMode == INDEX_MODE)
 		{
-			var posX = e.clientX;
-			var posY = e.clientY;
+            //var node = e.currentTarget;
 
-			//var slide;
-			window.status = &quot;X= &quot; + posX + &quot; Y= &quot; + posY;
-
-			//indexSetActiveSlide(slide);
+            // using this instead of currentTarget
+            indexSetActiveSlide(id);
+            toggleSlideIndex();
 		}
 
 	}
 }
 // Set event handler for mouse click.
-document.onmousedown = mouseclick;
+// document.onmousedown = mouseclick;
 
 /** The fade effect.
  *
@@ -13180,4 +13196,5 @@ function suffixNodeIds(node, suffix)
 }
 
 </script>
+<title id='title'>This is the title</title>
 </svg>
