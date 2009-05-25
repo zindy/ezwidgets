@@ -22,7 +22,10 @@ Selecting a slide:
 
 == Issues ==
 
-Currently, clicking on a slide in index mode causes problems. You can click on a slide, but then the mouse wheel events stop working. The anchor part of the URL gets messed-up too: an extra "1" is added to the anchor. Not sure why...
+*Fixed 2009-05-25*
+  _Currently, clicking on a slide in index mode causes problems. You can click on a slide, but then the mouse wheel events stop working. The anchor part of the URL gets messed-up too: an extra "1" is added to the anchor. Not sure why..._
+
+For {{{window.location.hash = activeSlide + 1;}}} to work, {{{activeSlide}}} must be an integer...
 
 = Branch and presentation =
 
