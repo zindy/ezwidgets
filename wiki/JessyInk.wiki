@@ -25,6 +25,7 @@ Switching to index mode:
 == In index mode ==
 
 Zooming in and out:
+  * *0* reset zoom level (default zoom set to 4 slides across instead of 3?)
   * *-* zoom out (display more slides)
   * *+* or *=* zoom in (display less slides)
 
