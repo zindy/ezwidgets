@@ -2,7 +2,7 @@
 
 = !JessyInk keyboard navigation =
 
-See also !JessyInk mouse navigation
+See also JessyInkMouse for mouse navigation.
 
 == In slide mode ==
 
