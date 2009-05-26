@@ -2,45 +2,11 @@
 
 = Introduction =
 
-These are my additions to the [https://launchpad.net/jessyink JessyInk] extension. Nothing exciting, just some random ideas I thought might be useful, and then had great fun implementing.
+A page about the [https://launchpad.net/jessyink JessyInk] extension. Nothing exciting here, just some random ideas I thought might be useful, and then had great fun implementing.
 
 = !JessyInk navigation =
 
-Bulk of my additions: added a few navigational shortcuts to make my life easier. Listed here are _all_ the navigational shortcuts available, as of version 1.2.0 (yet to be released).
-
-== In slide mode ==
-
-Moving backward and forward using set transitions:
-  * *space* and *left click* move to the next slide
-  * *left* and *right* move back and forward one slide
-
-Moving backward and forward without transitions:
-  * *up* and *down* move back and forward one slide
-  * *page up* and *page down* move back and forward one slide
-  * *scroll wheel up* and *scroll wheel down* move back and forward one slide
-
-Switching to index mode:
-  * *i* toggles from _slide_ to _index_ mode
-
-== In index mode ==
-
-Zooming in and out:
-  * *0* reset zoom level (default zoom set to 4 slides across instead of 3?)
-  * *-* zoom out (display more slides)
-  * *+* or *=* zoom in (display less slides)
-
-Moving around:
-  * *up*, *down*, *left*, *right* arrows to select a slide
-  * *page up* and *page down* move back and forward one page
-  * *scroll wheel up* and *scroll wheel down* move back and forward one page
-
-Selecting a slide:
-  * *i* or *enter* toggles from _index_ to _slide_ mode, selecting the highlighted slide
-  * *left click* selects a slide
-
-== Issues ==
-
-Currently, clicking on a slide in index mode causes problems. You can click on a slide, but then the mouse wheel events stop working. The anchor part of the URL gets messed-up too: an extra "1" is added to the anchor. Not sure why...
+This section is still under heavy development. See [http://code.google.com/p/jessyink/wiki/mousenav mousenav] and [http://code.google.com/p/jessyink/wiki/keyboardnav keyboardnav] if you have any comments.
 
 = Titles =
 
@@ -70,15 +36,13 @@ Like I said... just an idea :-)
 
 = My code so far=
 
-My current musings are available from the googlecode SVN (until we merge all the changes back into the main !JessyInk tree in June):
+My latest code is now hosted at the [https://code.launchpad.net/jessyink JessyInk repository].
 
-http://code.google.com/p/ezwidgets/source/browse/#svn/trunk/jessyink
+  * [https://code.launchpad.net/~ezindy/jessyink/ui-additions JessyInk ui-addtions]
 
-= Example presentation =
+= Latest presentation =
 
-An example presentation (using my modified extension) is available here:
-
-http://ezwidgets.googlecode.com/svn/trunk/jessyink/JessyInk_1_2_0_demo.svg
+Here is a [http://bazaar.launchpad.net/%7Eezindy/jessyink/ui-additions/download/ezindy%40gmail.com-20090525222032-22qn2xujsabdylwt/jessyink.svg-20090525100919-1x2qp1xpkkio63al-1/JessyInk.svg presentation] demonstrating the new navigation.
 
 = Conclusion =
 
