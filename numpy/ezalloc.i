@@ -1,7 +1,9 @@
 %module ezalloc
 %{
-#define SWIG_FILE_WITH_INIT
+#include <errno.h>
 #include "ezalloc.h"
+
+#define SWIG_FILE_WITH_INIT
 %}
 
 %include "numpy.i"
@@ -10,35 +12,31 @@
     import_array();
 %}
 
-
 %apply (int** ARGOUTVIEWM_ARRAY1, int *DIM1) {(int** veco1, int* n1)}
 %apply (int** ARGOUTVIEW_ARRAY1, int *DIM1) {(int** veco2, int* n2)}
 
 %include "ezalloc.h"
 
-%exception my_alloc1 {
-  $action
-  /* arg1,arg2,arg3 as in the wrapper (hack alert?) */
-  if (*arg3 != arg1)
-  {
-     PyErr_SetString(PyExc_MemoryError,"Not enough memory");
-     return NULL;
-  }
-}
+%exception
+{
+    errno = 0;
+    $action
 
-%exception my_alloc2 {
-  $action
-  /* arg1,arg2,arg3 as in the wrapper (hack alert?) */
-  if (*arg3 != arg1)
-  {
-     PyErr_SetString(PyExc_MemoryError,"Not enough memory");
-     return NULL;
-  }
+    if (errno != 0)
+    {
+        switch(errno)
+        {
+            case ENOMEM:
+                PyErr_Format(PyExc_MemoryError, "Failed malloc()");
+                break;
+            default:
+                PyErr_Format(PyExc_Exception, "Unknown exception");
+        }
+        return NULL;
+    }
 }
-
 
 %rename (alloc_managed) my_alloc1;
-
 %rename (alloc_leaking) my_alloc2;
 
 %inline %{
