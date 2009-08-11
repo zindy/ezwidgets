@@ -32,7 +32,7 @@
             default:
                 PyErr_Format(PyExc_Exception, "Unknown exception");
         }
-        return NULL;
+        SWIG_fail;
     }
 }
 

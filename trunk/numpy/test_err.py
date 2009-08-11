@@ -1,3 +1,5 @@
+#!python
+
 import traceback,sys
 import numpy
 import ezerr
@@ -16,7 +18,7 @@ for i in indexes:
         print "using ezerr.val() a[%d]=%d - should be %d" % (i,value,a[i])
 
 print "\n--- testing ezerr.alloc() ---"
-amounts = [1,-1] #1MB, -1MB
+amounts = [1,-1] #1 byte, -1 byte
 
 for n in amounts:
     try:
