@@ -77,7 +77,7 @@
   SWIGINTERN int
   SWIG_AsVal_dec(long)(PyObject * obj, long * val)
   {
-    PyArray_Descr * longDescr = PyArray_DescrNewFromType(NPY_LONG);
+    static PyArray_Descr * longDescr = PyArray_DescrNewFromType(NPY_LONG);
     if (PyInt_Check(obj)) {
       if (val) *val = PyInt_AsLong(obj);
       return SWIG_OK;
@@ -129,7 +129,7 @@
   SWIGINTERN int
   SWIG_AsVal_dec(unsigned long)(PyObject *obj, unsigned long *val)
   {
-    PyArray_Descr * ulongDescr = PyArray_DescrNewFromType(NPY_ULONG);
+    static PyArray_Descr * ulongDescr = PyArray_DescrNewFromType(NPY_ULONG);
     if (PyInt_Check(obj)) {
       long v = PyInt_AsLong(obj);
       if (v >= 0) {
