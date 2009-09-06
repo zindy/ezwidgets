@@ -142,7 +142,7 @@ static PyTypeObject _MyDeallocType = {
 {
   /* Given a PyObject, return a string describing its type.
    */
-  char* pytype_string(PyObject* py_obj) {
+  const char* pytype_string(PyObject* py_obj) {
     if (py_obj == NULL          ) return "C NULL value";
     if (py_obj == Py_None       ) return "Python None" ;
     if (PyCallable_Check(py_obj)) return "callable"    ;
@@ -161,8 +161,8 @@ static PyTypeObject _MyDeallocType = {
 
   /* Given a NumPy typecode, return a string describing the type.
    */
-  char* typecode_string(int typecode) {
-    static char* type_names[25] = {"bool", "byte", "unsigned byte",
+  const char* typecode_string(int typecode) {
+    static const char* type_names[25] = {"bool", "byte", "unsigned byte",
                                    "short", "unsigned short", "int",
                                    "unsigned int", "long", "unsigned long",
                                    "long long", "unsigned long long",
@@ -204,8 +204,8 @@ static PyTypeObject _MyDeallocType = {
     }
     else if is_array(input)
     {
-      char* desired_type = typecode_string(typecode);
-      char* actual_type  = typecode_string(array_type(input));
+      const char* desired_type = typecode_string(typecode);
+      const char* actual_type  = typecode_string(array_type(input));
       PyErr_Format(PyExc_TypeError,
                    "Array of type '%s' required.  Array of type '%s' given",
                    desired_type, actual_type);
@@ -213,8 +213,8 @@ static PyTypeObject _MyDeallocType = {
     }
     else
     {
-      char * desired_type = typecode_string(typecode);
-      char * actual_type  = pytype_string(input);
+      const char * desired_type = typecode_string(typecode);
+      const char * actual_type  = pytype_string(input);
       PyErr_Format(PyExc_TypeError,
                    "Array of type '%s' required.  A '%s' was given",
                    desired_type, actual_type);
@@ -1350,7 +1350,7 @@ static PyTypeObject _MyDeallocType = {
   npy_intp dims[1];
   if (!PyInt_Check($input))
   {
-    char* typestring = pytype_string($input);
+    const char* typestring = pytype_string($input);
     PyErr_Format(PyExc_TypeError,
                  "Int dimension expected.  '%s' given.",
                  typestring);
@@ -1378,7 +1378,7 @@ static PyTypeObject _MyDeallocType = {
   npy_intp dims[1];
   if (!PyInt_Check($input))
   {
-    char* typestring = pytype_string($input);
+    const char* typestring = pytype_string($input);
     PyErr_Format(PyExc_TypeError,
                  "Int dimension expected.  '%s' given.",
                  typestring);
@@ -1687,7 +1687,7 @@ static PyTypeObject _MyDeallocType = {
   $2 = &data_temp;
 }
 %typemap(argout,
-         fragment="NumPy_Backward_Compatibility")
+         fragment="NumPy_Backward_Compatibility,NumPy_Managed_Arrays")
   (DIM_TYPE* DIM1, DATA_TYPE** ARGOUTVIEWM_ARRAY1)
 {
   npy_intp dims[1] = { *$1 };
@@ -1715,7 +1715,7 @@ static PyTypeObject _MyDeallocType = {
   $3 = &dim2_temp;
 }
 %typemap(argout,
-         fragment="NumPy_Backward_Compatibility")
+         fragment="NumPy_Backward_Compatibility,NumPy_Managed_Arrays")
   (DATA_TYPE** ARGOUTVIEWM_ARRAY2, DIM_TYPE* DIM1, DIM_TYPE* DIM2)
 {
   npy_intp dims[2] = { *$2, *$3 };
@@ -1743,7 +1743,7 @@ static PyTypeObject _MyDeallocType = {
   $3 = &data_temp;
 }
 %typemap(argout,
-         fragment="NumPy_Backward_Compatibility")
+         fragment="NumPy_Backward_Compatibility,NumPy_Managed_Arrays")
   (DIM_TYPE* DIM1, DIM_TYPE* DIM2, DATA_TYPE** ARGOUTVIEWM_ARRAY2)
 {
   npy_intp dims[2] = { *$1, *$2 };
@@ -1800,7 +1800,7 @@ static PyTypeObject _MyDeallocType = {
   $3 = &data_temp;
 }
 %typemap(argout,
-         fragment="NumPy_Backward_Compatibility,NumPy_Array_Requirements")
+         fragment="NumPy_Backward_Compatibility,NumPy_Array_Requirements,NumPy_Managed_Arrays")
   (DIM_TYPE* DIM1, DIM_TYPE* DIM2, DATA_TYPE** ARGOUTVIEWM_FARRAY2)
 {
   npy_intp dims[2] = { *$1, *$2 };
@@ -1831,7 +1831,7 @@ static PyTypeObject _MyDeallocType = {
   $4 = &dim3_temp;
 }
 %typemap(argout,
-         fragment="NumPy_Backward_Compatibility")
+         fragment="NumPy_Backward_Compatibility,NumPy_Managed_Arrays")
   (DATA_TYPE** ARGOUTVIEWM_ARRAY3, DIM_TYPE* DIM1, DIM_TYPE* DIM2, DIM_TYPE* DIM3)
 {
   npy_intp dims[3] = { *$2, *$3, *$4 };
@@ -1861,7 +1861,7 @@ static PyTypeObject _MyDeallocType = {
   $4 = &data_temp;
 }
 %typemap(argout,
-         fragment="NumPy_Backward_Compatibility")
+         fragment="NumPy_Backward_Compatibility,NumPy_Managed_Arrays")
   (DIM_TYPE* DIM1, DIM_TYPE* DIM2, DIM_TYPE* DIM3, DATA_TYPE** ARGOUTVIEWM_ARRAY3)
 {
   npy_intp dims[3] = { *$1, *$2, *$3 };
