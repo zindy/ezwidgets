@@ -1,6 +1,5 @@
-#summary One-sentence summary of this page.
+#summary wxPython panel creation using xrc and an xrc mixin.
 #labels wxPython,XRC,mixin
-wxPython panel creation using xrc and an xrc mixin.
  
 = Introduction =
 
@@ -10,16 +9,32 @@ The mixin described here takes care of returning the values of all the controls 
 
 = Step 1: The XRC resource editor =
 
-Make sure that any event you want handled are ticked. This will create the
+==Files needed==
+[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui.xrc gui.xrc]
+
+==What to watch out for==
+
+Make sure that any event you want handled are ticked:
+
+[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/xrced3.png]
+[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/xrced4_annotations.png]
+
+This will create the
 {{{
 ...
 self.Bind(wx.EVT_BUTTON, self.OnButton_button, id=xrc.XRCID('button')
 ...
 }}}
-lines in the gui_xrc.py file (when dealing with the xrc file gui.xrc).
+lines in the [http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui_xrc.py gui_xrc.py] file (when dealing with the xrc file [http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui.xrc gui.xrc]). The file is exported from File - Generate Python...
+
+[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/xrced2_annotations.png]
 
 = Step 2: xrcMixin.py =
 
+==Files needed==
+[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/xrcMixin.py xrcMixin.py]
+
+==Code==
 Initial version of the xrcMixin.xrcMixin class follows:
 {{{
 class xrcMixin():
@@ -60,6 +75,7 @@ class xrcMixin():
         return dict
 }}}
 
+==Explanations==
 The class sports a _debug_ argument for some crude debugging. Two things the debugging mode does:
   * Changes the tooltips of each and every control to the xrc control name.
   * Tells the user whether some names are already used.
@@ -70,9 +86,17 @@ Oh and anything else the mixin class could do, I'd be interested to know!
 
 = Step 3: Making a panel =
 
+==Files needed==
+These are essentials: [http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/xrcMixin.py xrcMixin.py]
+
+These will be produced by xrced: [http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui.xrc gui.xrc] [http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui_xrc.py gui_xrc.py]
+
+These are related to the example below: [http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/validator.py validator.py] [http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui.py gui.py]
+
+==What does the code do?==
 The following example uses a validator (provided in the repository) to change the behaviour of the text controls.
 
-First, the actual panel creation:
+The actual panel creation code follows:
 {{{
 class TestPanel(xrcMixin.xrcMixin,gui_xrc.xrcmypanel):
     def __init__(self, *args, **kwargs):
@@ -90,14 +114,14 @@ class TestPanel(xrcMixin.xrcMixin,gui_xrc.xrcmypanel):
 }}}
 
 A few things can be noticed:
-  * The panel is called _mypanel_ in gui.xrc, so the generated wxPanel code is called _xrcmypanel_ in the gui_xrc.py file.
+  * The panel is called _mypanel_ in [http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui.xrc gui.xrc], so the generated wxPanel code is called _xrcmypanel_ in the [http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui_xrc.py gui_xrc.py] file.
   * The `xrcMixin` is initialised after the the xrcmypanel
   * Validators can then added (The gui_xrc code creates instances for every controls automatically)
-  * Events are dealt with simply by overriding existing Event method (such as the OnButton_button method).
+  * Events are dealt with simply by overriding existing Event method (such as the `OnButton_button` method).
   * Various events can be generated in order for the rest of the application to communicate with the panel (for instance, when changes in the panel are meant to trigger other parts of the application).
   * When we do this, we add the `GetValues()` method to the event, so that the controls can values can be easily read.
 
-Now for a complete example:
+Now for the complete [http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui.py gui.py] example:
 
 {{{
 import wx
@@ -164,6 +188,12 @@ if __name__ == '__main__':
 
 }}}
 
-That's it! Hope this was useful.
+==Screenshots==
 
-To do: Add a few screenshots / links to SVN.
+[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui1.png]
+[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui2.png]
+
+The float validator doesn't really work by the way!
+
+=Conclusion=
+That's it! Hope this was useful. And as usual, any comments welcome.
