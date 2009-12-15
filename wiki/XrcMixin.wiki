@@ -1,0 +1,169 @@
+#summary One-sentence summary of this page.
+#labels wxPython,XRC,mixin
+wxPython panel creation using xrc and an xrc mixin.
+ 
+= Introduction =
+
+Here is the problem this wiki attempts to solve: I often need to build complicated wxPython panels with loads of controls, spins, buttons, the values of which I only need to know when I press a hypothetical _submit_ button. The XRC resource editor (xrced) is great for building the panels and some of the boilerplate python logic.
+
+The mixin described here takes care of returning the values of all the controls in the panel as a dictionary, through a single method called `GetValues()`. This method can also be used for returning values via custom events.
+
+= Step 1: The XRC resource editor =
+
+Make sure that any event you want handled are ticked. This will create the
+{{{
+...
+self.Bind(wx.EVT_BUTTON, self.OnButton_button, id=xrc.XRCID('button')
+...
+}}}
+lines in the gui_xrc.py file (when dealing with the xrc file gui.xrc).
+
+= Step 2: xrcMixin.py =
+
+Initial version of the xrcMixin.xrcMixin class follows:
+{{{
+class xrcMixin():
+    def __init__(self,debug=False):
+        self.debug = debug
+
+        self.dict = {}
+        for ctrl in self.GetChildren():
+            name = ctrl.GetName()
+
+            if name != "-1":
+                if debug:
+                    ctrl.SetToolTip(wx.ToolTip(name))
+                    if name in self.dict.keys():
+                        print "Multiple instance of: %s" % name
+
+                setattr(self,name,ctrl)
+                self.dict[name]=ctrl
+
+    def GetValues(self):
+        """Values from panel controls
+
+        Scans controls in the panels and returns the values as a dictionary
+        @return a dictionary of the control values
+        """
+        dict = {}
+        for key,ctrl in self.dict.items():
+            methods = ctrl.__class__.__dict__.keys()
+            if 'GetValue' in methods:
+                dict[key]=ctrl.GetValue()
+            elif 'GetSelections' in methods:
+                dict[key]=ctrl.GetSelections()
+            elif 'GetSelection' in methods:
+                dict[key]=ctrl.GetSelection()
+            elif 'GetCurrentSelection' in methods:
+                dict[key]=ctrl.GetCurrentSelection()
+
+        return dict
+}}}
+
+The class sports a _debug_ argument for some crude debugging. Two things the debugging mode does:
+  * Changes the tooltips of each and every control to the xrc control name.
+  * Tells the user whether some names are already used.
+
+Last point is important because we return a dictionary of values which uses the control names as keys. If a name is used multiple times, then the control value gets overwritten in the returned dictionary.
+
+Oh and anything else the mixin class could do, I'd be interested to know!
+
+= Step 3: Making a panel =
+
+The following example uses a validator (provided in the repository) to change the behaviour of the text controls.
+
+First, the actual panel creation:
+{{{
+class TestPanel(xrcMixin.xrcMixin,gui_xrc.xrcmypanel):
+    def __init__(self, *args, **kwargs):
+        #initialising both the xrc panel we want (panel) and the xrcPanel class
+        gui_xrc.xrcmypanel.__init__(self,*args, **kwargs)
+        xrcMixin.xrcMixin.__init__(self,debug=1)
+
+        #adding the validators...
+        self.text1.Validator = validator.CharValidator(validator.FLOAT_DIGITS) 
+        self.text2.Validator = validator.CharValidator(validator.LETTERS) 
+
+    def OnButton_button(self, evt):
+        update_event = UpdateEvent( GetValues = self.GetValues)
+        wx.PostEvent(self, update_event)
+}}}
+
+A few things can be noticed:
+  * The panel is called _mypanel_ in gui.xrc, so the generated wxPanel code is called _xrcmypanel_ in the gui_xrc.py file.
+  * The `xrcMixin` is initialised after the the xrcmypanel
+  * Validators can then added (The gui_xrc code creates instances for every controls automatically)
+  * Events are dealt with simply by overriding existing Event method (such as the OnButton_button method).
+  * Various events can be generated in order for the rest of the application to communicate with the panel (for instance, when changes in the panel are meant to trigger other parts of the application).
+  * When we do this, we add the `GetValues()` method to the event, so that the controls can values can be easily read.
+
+Now for a complete example:
+
+{{{
+import wx
+import wx.lib.newevent
+
+import gui_xrc
+import xrcMixin
+import validator
+
+UpdateEvent, EVT_UPDATE = wx.lib.newevent.NewEvent()
+
+#==============================================================================
+class TestPanel(xrcMixin.xrcMixin,gui_xrc.xrcmypanel):
+    def __init__(self, *args, **kwargs):
+        #initialising both the xrc panel we want (panel) and the xrcPanel class
+        gui_xrc.xrcmypanel.__init__(self,*args, **kwargs)
+        xrcMixin.xrcMixin.__init__(self,debug=1)
+
+        #adding the validators...
+        self.text1.Validator = validator.CharValidator(validator.FLOAT_DIGITS) 
+        self.text2.Validator = validator.CharValidator(validator.LETTERS) 
+
+    def OnButton_button(self, evt):
+        update_event = UpdateEvent( GetValues = self.GetValues)
+        wx.PostEvent(self, update_event)
+
+#==============================================================================
+class TestFrame(wx.Frame):
+    def __init__(self, *args, **kwargs):
+        """
+        Class constructor
+
+        @param args: Arguments
+        @param kwargs: Keyword Arguments
+        """
+        wx.Frame.__init__(self, *args, **kwargs)
+        self.CreateStatusBar()
+
+        p = TestPanel(self)
+        p.Bind(EVT_UPDATE, self.OnUpdate)
+
+    def OnUpdate(self,evt):
+        """
+        Catches the update events
+
+        @param evt The event 
+        """
+        s = "Values:\n\n"
+        for key,value in evt.GetValues().items():
+            s+="%s: %s\n" % (key,str(value))
+        wx.MessageBox(s, 'Feedback')
+
+class TestApp(wx.App):
+    def OnInit(self):
+        f = TestFrame(None,title="Test frame", size=(300,480))
+        f.Show()
+        self.SetTopWindow(f)
+        return True
+
+#==============================================================================
+if __name__ == '__main__':
+    app = TestApp(False)
+    app.MainLoop()
+
+}}}
+
+That's it! Hope this was useful.
+
+To do: Add a few screenshots / links to SVN.
