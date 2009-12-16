@@ -28,12 +28,13 @@ Released under the MIT licence.
 __author__ = "Egor Zindy <ezindy@gmail.com>"
 __copyright__ = "Copyright (c) 2009 Egor Zindy"
 __license__ = "MIT"
-__version__ = "1.0"
-__date= "2009-12-09"
+__version__ = "1.0.1"
+__date= "2009-12-16"
 __status__ = "Production"
 
 import wx
 import wx.lib.newevent
+import wx.lib.inspection
 
 import gui_xrc
 import xrcMixin
@@ -44,9 +45,10 @@ UpdateEvent, EVT_UPDATE = wx.lib.newevent.NewEvent()
 #==============================================================================
 class TestPanel(xrcMixin.xrcMixin,gui_xrc.xrcmypanel):
     def __init__(self, *args, **kwargs):
+
         #initialising both the xrc panel we want (panel) and the xrcPanel class
         gui_xrc.xrcmypanel.__init__(self,*args, **kwargs)
-        xrcMixin.xrcMixin.__init__(self,debug=1)
+        xrcMixin.xrcMixin.__init__(self,debug=1, InspectionTool = wx.lib.inspection.InspectionTool())
 
         #adding the validators...
         self.text1.Validator = validator.CharValidator(validator.FLOAT_DIGITS) 
@@ -77,9 +79,9 @@ class TestFrame(wx.Frame):
 
         @param evt The event 
         """
-        s = "Values:\n\n"
+        s = "Values:\n"
         for key,value in evt.GetValues().items():
-            s+="%s: %s\n" % (key,str(value))
+            s+="\n%s: %s" % (key,str(value))
         wx.MessageBox(s, 'Feedback')
 
 class TestApp(wx.App):
