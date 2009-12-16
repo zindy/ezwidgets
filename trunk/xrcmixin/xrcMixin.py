@@ -33,6 +33,8 @@ __date= "2009-12-09"
 __status__ = "Production"
 
 import wx
+import wx.lib.newevent
+DebugEvent, EVT_DEBUG = wx.lib.newevent.NewEvent()
 
 class xrcMixin():
     def __init__(self,debug=False):
@@ -50,6 +52,9 @@ class xrcMixin():
 
                 setattr(self,name,ctrl)
                 self.dict[name]=ctrl
+
+        if debug:
+            self.Bind(wx.EVT_LEFT_DCLICK,self.OnDebug)
 
     def GetValues(self):
         """Values from panel controls
@@ -70,4 +75,16 @@ class xrcMixin():
                 dict[key]=ctrl.GetCurrentSelection()
 
         return dict
+
+    def OnDebug(self,evt):
+        s = "Control values:\n\n"
+        for key,value in self.GetValues().items():
+            s+="%s: %s\n" % (key,str(value))
+
+        wx.MessageBox(s, 'Debug')
+
+        debug_event = DebugEvent( GetValues = self.GetValues)
+        wx.PostEvent(self, debug_event)
+
+        evt.Skip()
 
