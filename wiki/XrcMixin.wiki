@@ -7,6 +7,10 @@ Here is the problem this wiki attempts to solve: I often need to build complicat
 
 The mixin described here takes care of returning the values of all the controls in the panel as a dictionary, through a single method called `GetValues()`. This method can also be used for returning values via custom events.
 
+=Step 0: An actual example=
+
+For a complete example (main frame, menubar, one panel), please refer to the XrcCalc page, a rewrite of the [http://wiki.wxpython.org/UsingXmlResources UsingXmlResources] wxPython tutorial code.
+
 = Step 1: The XRC resource editor =
 
 ==Files needed==
