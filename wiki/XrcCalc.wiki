@@ -315,4 +315,12 @@ Compared to the [http://wiki.wxpython.org/UsingXmlResources original tutorial], 
   * All the other program logic is identical to the original.
 
 =Conclusion=
+
+This page has hopefully demonstrated how to automate a lot of the event and control declaration in wxpython/xrc applications built with xrced.
+
+The main concepts revolve around:
+  * generating the python code from xrced
+  * using [http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/xrcMixin.py xrcMixin.py], an xrc mixin for automatically linking controls and parent panels
+  * defining a main frame and menubar in xrc to hide the menu event handling. Then, only the methods linked to each menu event need overwriting.
+
 Any comments welcome!
