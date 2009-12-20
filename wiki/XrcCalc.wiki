@@ -227,7 +227,7 @@ def __init_resources():
 
 ==calc.py==
 
-The [http://ezwidgets.googlecode.com/svn/trunk/calc/calc.py calc.py] isn't much shorted than the original, but a lot of the control creation and event declaration is now defined implicitly. As a proof of that, the wx.xrc module isn't needed any more:
+The [http://ezwidgets.googlecode.com/svn/trunk/calc/calc.py calc.py] isn't much shorted than the original, but a lot of the control creation and event declaration is now defined implicitly when importing [http://ezwidgets.googlecode.com/svn/trunk/calc/calc_xrc.py calc_xrc.py]. As a proof of that, the wx.xrc module isn't needed any more in [http://ezwidgets.googlecode.com/svn/trunk/calc/calc.py calc.py]:
 
 {{{
 """
