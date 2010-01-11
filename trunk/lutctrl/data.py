@@ -1,58 +1,74 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 
-__authors__ = ['Egor Zindy <EZindy@gmail.com>']
-__contributors__ = []
-__date__ = '2007-12-01'
-__copyright__ = """
-Copyright (c) 2007 Egor Zindy
 """
+Look-up tables for image visualisation / image processing applications.
 
-__license__ = """
-All rights reserved.
+Original data located on http://rsb.info.nih.gov/ij/download/luts/
+Rasband, W.S., ImageJ, U. S. National Institutes of Health, Bethesda,
+Maryland, USA, http://rsb.info.nih.gov/ij/, 1997-2005.
 
-Redistribution and use in source and binary forms, with or without modification, 
-are permitted provided that the following conditions are met:
+How does it work?
 
-    * Redistributions of source code must retain the above copyright notice, 
-      this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright notice, 
-      this list of conditions and the following disclaimer in the documentation 
-      and/or other materials provided with the distribution.
-    * Neither the name of Egor Zindy nor the names of his contributors 
-      may be used to endorse or promote products derived from this software 
-      without specific prior written permission.
+LUT Data is stored in a PNG image 256 pixel wide, n_lut high.
+The PNG image is stored as base64 data inside this file.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE 
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+The latest version of this file is stored in my google code repository:
+    http://code.google.com/p/ezwidgets/
+
+Copyright (c) 2007 Egor Zindy <ezindy@gmail.com>
+
+Released under the MIT licence.
 """
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
 
-__changelog__ = """
-2007-12-01 Released to Google Code under a BSD license.
-"""
+__author__ = "Egor Zindy <ezindy@gmail.com>"
+__copyright__ = "Copyright (c) 2007 Egor Zindy"
+__license__ = "MIT"
+__version__ = "1.0"
+__date= "2007-10-11"
+__status__ = "Production"
 
-# LUT data located on http://rsb.info.nih.gov/ij/download/luts/
-# Rasband, W.S., ImageJ, U. S. National Institutes of Health, Bethesda,
-# Maryland, USA, http://rsb.info.nih.gov/ij/, 1997-2005.
 
 import wx
 from binascii import a2b_base64
 import  cStringIO
 
 class LutData:
-    def __init__(self):
-        self._names=_names
+    def __init__(self, table=None):
 
         stream = cStringIO.StringIO(a2b_base64(_luts))
-        self._s = wx.ImageFromStream( stream ).GetData()
+        _s = wx.ImageFromStream( stream ).GetData()
         stream.close()
+
+        if table is not None:
+            names = []
+            s = ""
+            for i in table:
+                names.append(_names[i])
+                s += _s[i*768:(i+1)*768]
+
+            self._names = names
+            self._s = s
+        else:
+            self._names=_names
+            self._s = _s
+
 
     def get_count(self):
         return len(self._names)
