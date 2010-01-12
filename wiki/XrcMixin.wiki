@@ -20,8 +20,8 @@ For a complete example (main frame, menubar, one panel), please refer to the Xrc
 
 Make sure that any event you want handled are ticked:
 
-[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/xrced3.png]
-[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/xrced4_annotations.png]
+[http://ezwidgets.googlecode.com/svn/pics/xrced3.png]
+[http://ezwidgets.googlecode.com/svn/pics/xrced4_annotations.png]
 
 This will create the
 {{{
@@ -31,7 +31,7 @@ self.Bind(wx.EVT_BUTTON, self.OnButton_button, id=xrc.XRCID('button')
 }}}
 lines in the [http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui_xrc.py gui_xrc.py] file (when dealing with the xrc file [http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui.xrc gui.xrc]). The file is exported from File - Generate Python...
 
-[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/xrced2_annotations.png]
+[http://ezwidgets.googlecode.com/svn/pics/xrced2_annotations.png]
 
 = Step 2: xrcMixin.py =
 
@@ -234,8 +234,8 @@ if __name__ == '__main__':
 
 ==Screenshots==
 
-[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui1.png]
-[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/gui2.png]
+[http://ezwidgets.googlecode.com/svn/pics/gui1.png]
+[http://ezwidgets.googlecode.com/svn/pics/gui2.png]
 
 The float validator doesn't really work by the way!
 
@@ -253,7 +253,7 @@ xrcMixin.xrcMixin.__init__(self, debug=1, InspectionTool = wx.lib.inspection.Ins
 
 When running the panel, `xrcMixin` checks for duplicate names and will pop-up a message box if any are found:
 
-[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/debug1.png]
+[http://ezwidgets.googlecode.com/svn/pics/debug1.png]
 
 This is important because we return a dictionary of values which uses the control names as keys. If a name is used multiple times, then the control value gets overwritten in the returned dictionary. Remember, if you don't want a control to return a value, simply don't give it a name!
 
@@ -266,7 +266,7 @@ Other trics performed:
 
 When the inspection tool is provided, double-clicking on the panel brings-up the console:
 
-[http://ezwidgets.googlecode.com/svn/trunk/xrcmixin/inspection_tool.png]
+[http://ezwidgets.googlecode.com/svn/pics/inspection_tool.png]
 
 Panel values are accessed by typing in the console (when panel is selected):
 
