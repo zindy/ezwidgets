@@ -57,41 +57,44 @@ class TestFrame(wx.Frame):
         box = wx.BoxSizer(wx.VERTICAL)
 
         #different lut controls
-        lc1=ctrl.LutCtrl(p,LD,0,style=ctrl.LUT_CHOICE)
-        box.Add(lc1,0,wx.EXPAND|wx.ALL,2)
-        lc1.Bind(ctrl.EVT_LUT, self.OnLut)
+        if 1:
+            lc1=ctrl.LutCtrl(p,LD,0,style=ctrl.LUT_CHOICE)
+            box.Add(lc1,0,wx.EXPAND|wx.ALL,2)
+            lc1.Bind(ctrl.EVT_LUT, self.OnLut)
 
-        lc2=ctrl.LutCtrl(p,LD,1,style=ctrl.LUT_SPIN)
-        box.Add(lc2,0,wx.EXPAND|wx.ALL,2)
-        lc2.Bind(ctrl.EVT_LUT, self.OnLut)
+            lc2=ctrl.LutCtrl(p,LD,1,style=ctrl.LUT_SPIN)
+            box.Add(lc2,0,wx.EXPAND|wx.ALL,2)
+            lc2.Bind(ctrl.EVT_LUT, self.OnLut)
 
-        lc3=ctrl.LutCtrl(p,LD,14,style=ctrl.LUT_CHOICE|ctrl.LUT_SPIN)
-        box.Add(lc3,0,wx.EXPAND|wx.ALL,2)
-        lc3.Bind(ctrl.EVT_LUT, self.OnLut)
+            lc3=ctrl.LutCtrl(p,LD,14,style=ctrl.LUT_CHOICE|ctrl.LUT_SPIN)
+            box.Add(lc3,0,wx.EXPAND|wx.ALL,2)
+            lc3.Bind(ctrl.EVT_LUT, self.OnLut)
 
         #opacity control
-        absrange = (0,100)
-        lutrange = (20,80)
-        oc = ctrl.OpacityCtrl(p,LD,14)
-        box.Add(oc,0,wx.EXPAND|wx.ALL,2)
-        oc.SetRange(absrange[0],absrange[1])
+        if 1:
+            absrange = (0,100)
+            lutrange = (20,80)
+            oc = ctrl.OpacityCtrl(p,LD,14)
+            box.Add(oc,0,wx.EXPAND|wx.ALL,2)
+            oc.SetRange(absrange[0],absrange[1])
 
-        #make a more complicated opacity function
-        f = numpy.array([[0,0],[0.2,0.6],[0.75,1],[1,0.25]])
-        oc.SetOpacity(f)
-        oc.Bind(ctrl.EVT_UPDATE, self.OnOpacity)
-        self.oc = oc
+            #make a more complicated opacity function
+            f = numpy.array([[0,0],[0.2,0.6],[0.75,1],[1,0.25]])
+            oc.SetOpacity(f)
+            oc.Bind(ctrl.EVT_UPDATE, self.OnOpacity)
+            self.oc = oc
 
         #histogram control
-        hc = ctrl.HistogramCtrl(p,LD,14,minspan=10)
-        hc.Bind(ctrl.EVT_RANGE, self.OnHistogram)
+        if 1:
+            hc = ctrl.HistogramCtrl(p,LD,14,minspan=10)
+            hc.Bind(ctrl.EVT_RANGE, self.OnHistogram)
 
-        box.Add(hc,1,wx.EXPAND|wx.ALL,2)
+            box.Add(hc,1,wx.EXPAND|wx.ALL,2)
 
-        #generate some random data to use as a histogram
-        data = 1000 * numpy.random.random_sample(1000)
-        hc.SetData(data,currentrange=(100,900))
-        self.hc = hc
+            #generate some random data to use as a histogram
+            data = 1000 * numpy.random.random_sample(1000)
+            hc.SetData(data,current_range=(100,900))
+            self.hc = hc
 
         box.Layout()
         p.SetSizer(box)
@@ -126,8 +129,10 @@ class TestFrame(wx.Frame):
 
         self.SetStatusText(s)
         #self.lp.SetLutIndex(event.GetLutIndex())
-        self.oc.SetLutIndex(event.GetLutIndex())
-        self.hc.SetLutIndex(event.GetLutIndex())
+        if hasattr(self,'oc'):
+            self.oc.SetLutIndex(event.GetLutIndex())
+        if hasattr(self,'hc'):
+            self.hc.SetLutIndex(event.GetLutIndex())
 
 def test():
     app = wx.PySimpleApp()

@@ -72,6 +72,7 @@ import wx
 import wx.lib.newevent
 import numpy
 import math
+import time
 
 RangeEvent, EVT_RANGE = wx.lib.newevent.NewEvent()
 UpdateEvent, EVT_UPDATE = wx.lib.newevent.NewEvent()
@@ -82,22 +83,28 @@ SubmitEvent, EVT_SUBMIT = wx.lib.newevent.NewEvent()
 LUT_CHOICE = 1
 LUT_SPIN = 2
 
-#alternate d black and d white and return he x,y image
-def make_checker(w,h,d,col1=1,col2=0):
+#alternate color1/color2 d-wide squares and return the w-h image rectangle as a RGBA string.
+def make_checker(w,h,d,color1=(255,255,255),color2=(0,0,0)):
     if w == 0 or h == 0:
         return None
 
-    nx = int(math.ceil(w / 2. / d))
-    ny = int(math.ceil(h / 2. / d))
+    nx = int(math.ceil(float(w) / 2. / d))
+    ny = int(math.ceil(float(h) / 2. / d))
 
-    a1 = numpy.zeros((d,d),numpy.uint8)+col1
-    a2 = numpy.zeros((d,d),numpy.uint8)+col2
+    #colours with alpha:
+    c1 = list(color1) + [255]
+    c2 = list(color2) + [255]
 
-    row1 = numpy.hstack([a1,a2]*nx)
-    row2 = numpy.hstack([a2,a1]*nx)
+    #only need one line... (RGBA)
+    line = numpy.array(((c1*d)+(c2*d))*(nx+1),dtype=numpy.uint8)
 
+    #these are the two rows of squares:
+    row1 = numpy.array([line[:-d*4]]*d)
+    row2 = numpy.array([line[d*4:]]*d)
+
+    #now do an image and return it as a string...
     image = numpy.vstack([row1,row2]*ny)
-    return image[:h,:w]
+    return image[:h,:w*4].tostring()
 
 class LutPanel(wx.Panel):
     def __init__(self, parent,LutData,lut_index=0,size=(-1,24)):
@@ -259,19 +266,17 @@ class HistogramCtrl(wx.ScrolledWindow):
     '''\brief The histogram control, a scrolled window'''
 
     histogram = None
+    histogram_scaled = None
+    nbins = None
     bmp_histogram = None
     img_lut = None
-    img_bg = None
+    bmp_bg = None
 
     buffer = None
-    wx.InitAllImageHandlers()
 
-
-    left_absolute_range = 0
-    right_absolute_range = 255
-
-    left_current_range = 0
-    right_current_range = 255
+    absolute_range = None
+    current_range = None
+    stored_range = None
 
     left_dc = 0
     right_dc = 255
@@ -283,7 +288,7 @@ class HistogramCtrl(wx.ScrolledWindow):
 
     active_bar = None
 
-    def __init__(self, parent, LutData, lut_index = 0, histogram=None,absrange=(0,255),currentrange=(0,255),minspan=0.01,size=(-1,100)):
+    def __init__(self, parent, LutData, lut_index = 0, histogram=None,absolute_range=[0,255],current_range=[0,255],minspan=0.01,size=(-1,50)):
         wx.ScrolledWindow.__init__(self, parent, -1, size=size, style=wx.SUNKEN_BORDER)
 
         self.LutData = LutData
@@ -291,8 +296,8 @@ class HistogramCtrl(wx.ScrolledWindow):
             lut_index = 0
 
         #set the absolute range...
-        self.SetAbsoluteRange(absrange[0],absrange[1])
-        self.SetCurrentRange(absrange[0],absrange[1])
+        self.SetAbsoluteRange(absolute_range)
+        self.SetCurrentRange(current_range)
 
         self.SetLutIndex(lut_index,redraw=0)
         self.SetHistogram(histogram)
@@ -317,34 +322,70 @@ class HistogramCtrl(wx.ScrolledWindow):
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeaveWindow)
 
-    def SetData(self,data,nbins=20,absrange=None,currentrange=None):
-        h,b = numpy.histogram(data,nbins,absrange) #,normed=1)
-        h = h.astype(numpy.float)/max(h)
+    def SetData(self,data,nbins=None,absolute_range=None,current_range=None):
+        if self.nbins is None and nbins is None:
+            self.nbins = 20
+        elif nbins is not None:
+            self.nbins = nbins
 
-        if absrange is None:
+        h,b = numpy.histogram(data,self.nbins,absolute_range)
+        h = h.astype(numpy.float)
+
+        if absolute_range is None:
             ami = min(b)
             ama = max(b)
-            absrange = (ami,ama)
+            absolute_range = (ami,ama)
 
-        if currentrange is None:
-            currentrange = absrange
+        if self.current_range is None:
+            if current_range is None:
+                current_range = absolute_range
+            else:
+                current_range = self.current_range
 
-        self.SetHistogram(h,absrange,currentrange)
+        self.SetHistogram(h,absolute_range,current_range)
 
-    def SetHistogram(self,histogram=None,absrange=None,currentrange=None):
-        if histogram is None or absrange is None or currentrange is None:
+    def SetHistogram(self,histogram=None,absolute_range=None,current_range=None):
+        if histogram is None and self.histogram is None:
             return
 
-        self.left_absolute_range = absrange[0]
-        self.right_absolute_range = absrange[1]
-        self.left_current_range = currentrange[0]
-        self.right_current_range = currentrange[1]
+        if histogram is None:
+            histogram = self.histogram
 
+        if absolute_range is None:
+            lar, rar =self.absolute_range
+        else:
+            lar, rar = absolute_range
+            self.absolute_range = absolute_range
+
+        if current_range is None:
+            lcr, rcr = self.current_range
+        else:
+            lcr, rcr = current_range
+
+        #reassessing the ranges...
+        if (lcr <= lar and rcr <= lar) or (lcr >= rar and rcr >= rar):
+            #both outside the absolute range?
+            lcr, rcr = lar, rar
+        else:
+            #current too far left?
+            if lcr < lar:
+                lcr = lar
+            elif lcr > rar:
+                lcr = rar
+
+            #current too far right?
+            if rcr > rar:
+                rcr = rar
+            elif rcr < lar:
+                rcr = lar
+
+        self.current_range = [lcr, rcr]
         self.histogram = histogram
-        self.bins = histogram
+        self.histogram_max = max(histogram)
 
         self.MakeBgBmp()
         self.MakeHistogramBmp()
+        self.MakeLeftRightDC()
         self.UpdateDrawing()
 
     def getWidth(self):
@@ -369,12 +410,12 @@ class HistogramCtrl(wx.ScrolledWindow):
 
             self.MakeLeftRightDC(dc_size)
             self.MakeHistogramBmp(dc_size)
-            self.MakeLutBmp(dc_size)
+            self.MakeLutImage(dc_size)
             self.MakeBgBmp(dc_size)
 
             # Initialize the buffer bitmap.  No real DC is needed at this point.
-            self.buffer = wx.EmptyBitmapRGBA(dc_w,dc_h,0,0,0,255)
-            #dc = wx.BufferedDC(None, self.buffer)
+            #self.buffer = wx.EmptyBitmapRGBA(dc_w,dc_h,0,0,0,255)
+            self.buffer = wx.EmptyBitmap(self.maxWidth, self.maxHeight)
             self.UpdateDrawing()
 
     def OnLeaveWindow(self,event):
@@ -391,8 +432,9 @@ class HistogramCtrl(wx.ScrolledWindow):
         dc = wx.BufferedPaintDC(self, self.buffer, wx.BUFFER_CLIENT_AREA)
 
     def DoDrawing(self, dc, printing=False):
-        dc.Clear()
+        self.DrawCheckerBoard(dc)
         self.DrawLut(dc)
+        self.DrawHistogram(dc)
         self.DrawBars(dc)
         dc.EndDrawing()
 
@@ -405,15 +447,7 @@ class HistogramCtrl(wx.ScrolledWindow):
         if w == 0 or h == 0:
             return
 
-        bg = make_checker(w,h,16,150,220)
-
-        array = numpy.zeros( (h, w, 3),numpy.uint8)
-        array[:,:,0] = bg
-        array[:,:,1] = bg
-        array[:,:,2] = bg
-
-        self.img_bg = wx.EmptyImage(w,h)
-        self.img_bg.SetData(array.tostring())
+        self.bmp_bg = wx.BitmapFromBufferRGBA(w,h,make_checker(w,h,16,(150,150,150),(220,220,220)))
 
     def MakeLeftRightDC(self,size=None):
         if size is None:
@@ -421,12 +455,12 @@ class HistogramCtrl(wx.ScrolledWindow):
         else:
             w,h = size
 
-        absolute_width = self.right_absolute_range - self.left_absolute_range
-        current_width = self.right_current_range - self.left_current_range
+        absolute_width = self.absolute_range[1] - self.absolute_range[0]
+        current_width = self.current_range[1] - self.current_range[0]
 
         factor = w / float(absolute_width)
-        self.left_dc = (self.left_current_range - self.left_absolute_range) * factor
-        self.right_dc = (self.right_current_range - self.left_absolute_range) * factor
+        self.left_dc = (self.current_range[0] - self.absolute_range[0]) * factor
+        self.right_dc = (self.current_range[1] - self.absolute_range[0]) * factor
 
         if self.left_dc < 0:
             self.left_dc = 0
@@ -446,11 +480,15 @@ class HistogramCtrl(wx.ScrolledWindow):
 
         n_bins = self.histogram.shape[0]
 
+        #scale the histogram (used for the tooltip)
+        indexes = (numpy.arange(w,dtype=numpy.float)*float(n_bins)/float(w)).astype(numpy.int)
+        self.histogram_scaled = numpy.take(self.histogram,indexes)
+
         rect_list = numpy.zeros((n_bins,4))
         w_rect = int(float(w)/(n_bins))
         missing = w-w_rect*n_bins
 
-        hist = self.histogram * h
+        hist = self.histogram / self.histogram_max * h
         y = h
         x = 0
         for i in range(n_bins):
@@ -462,31 +500,52 @@ class HistogramCtrl(wx.ScrolledWindow):
             rect_list[i,:]=[x,h-hist[i],w_temp,h]
             x += w_temp
 
-        buffer = wx.EmptyBitmapRGBA(w,h,0,0,0,255)
+        #White image, black columns, will use black as the mask
+        buffer = wx.EmptyBitmapRGBA(w,h,255,255,255,255)
 
         dc = wx.BufferedDC(None, buffer)
-        dc.SetPen( wx.Pen("RED",0) )
-        dc.SetBrush( wx.Brush("WHITE") )
+        dc.SetPen( wx.Pen("BLACK",1) )
+        dc.SetBrush( wx.Brush("BLACK") )
         dc.DrawRectangleList(rect_list)
         dc.EndDrawing()
 
+        #This avoids the following error:
+        #wx._core.PyAssertionError: C++ assertion "!bitmap.GetSelectedInto()" failed
+        #at ..\..\src\msw\bitmap.cpp(1509) in wxMask::Create():
+        #bitmap can't be selected in another DC
+        del dc
+
+        mask = wx.Mask(buffer,wx.BLACK)
+        buffer.SetMask(mask)
+
         self.bmp_histogram = buffer
 
-    def MakeLutBmp(self, size=None):
+    def MakeLutImage(self, size=None):
         if size is None:
             w,h=self.GetClientSize()
         else:
             w,h = size
 
         s=self.LutData.get_lut(self.lut_index)
+        so = numpy.zeros(256,dtype=numpy.uint8)
+        so.fill(255)
+
         image = wx.EmptyImage(256,1)
         image.SetData(s)
+        image.SetAlphaData(so.tostring())
 
         self.img_lut = image
 
     def DrawHistogram(self,dc):
-        bmp = self.bmp_histogram
-        dc.DrawBitmap(bmp,0,0)
+        if self.bmp_histogram is None:
+            return
+
+        mdc = wx.MemoryDC()
+        mdc.SelectObject(self.bmp_histogram)
+        w,h=self.bmp_histogram.GetSize()
+
+        dc.Blit(0,0, w,h, mdc, 0,0, wx.COPY, True)
+        #dc.DrawBitmap(self.bmp_histogram,0,0,255)
 
     def DrawBars(self,dc):
         w,h = self.GetClientSize()
@@ -498,7 +557,7 @@ class HistogramCtrl(wx.ScrolledWindow):
                 pen_left = wx.Pen("BLACK", 1)
 
             if self.active_bar == 1 or self.active_bar == 2:
-                pen_right = wx.Pen("RED", 2)
+                pen_right = wx.Pen("RED", 2,style=wx.SOLID)
             else:
                 pen_right = wx.Pen("BLACK", 1)
         else:
@@ -512,45 +571,32 @@ class HistogramCtrl(wx.ScrolledWindow):
             else:
                 pen_right = wx.Pen("BLACK", 1)
 
+        dc.SetBrush(wx.TRANSPARENT_BRUSH)
         dc.SetPen(pen_left)
         dc.DrawLine(self.left_dc,0, self.left_dc,h)
         dc.SetPen(pen_right)
         dc.DrawLine(self.right_dc,0, self.right_dc,h)
 
     def DrawLut(self,dc):
-        if self.img_lut is None or self.bmp_histogram is None or self.img_bg is None:
-            return
-
         w,h = self.GetClientSize()
 
-        bmp = self.img_bg.ConvertToBitmap()
-
-        if 1:
-            bmp_histogram = self.bmp_histogram
-            mask = wx.Mask(bmp_histogram)
-            bmp.SetMask(mask)
-
-        mdc = wx.MemoryDC()
-        mdc.SelectObject(bmp)
-
-        absolute_width = self.right_absolute_range - self.left_absolute_range
-        current_width = self.right_current_range - self.left_current_range
+        absolute_width = self.absolute_range[1] - self.absolute_range[0]
+        current_width = self.current_range[1] - self.current_range[0]
         factor = w / float(absolute_width)
         dc_width = math.ceil(current_width * factor)
 
         img_scaled = self.img_lut.Scale(dc_width,h)
-        mdc.DrawBitmap(img_scaled.ConvertToBitmap(),self.left_dc,0)
+        dc.DrawBitmap(img_scaled.ConvertToBitmap(),self.left_dc,0,255)
 
-        dc.Blit(0,0, w,h, mdc, 0,0, wx.COPY, True)
-
-    def DrawCheckerBoard(self,dc, box=5):
+    def DrawCheckerBoard(self,dc):
         """
         Draws a checkerboard on a wx.DC.
         Used for the Alpha channel control and the colour panels.
         """
+        if self.bmp_bg is None:
+            return
 
-        bmp = self.img_bg.ConvertToBitmap()
-        dc.DrawBitmap(bmp,0,0)
+        dc.DrawBitmap(self.bmp_bg,0,0)
 
 
     def SetXY(self, event):
@@ -561,16 +607,38 @@ class HistogramCtrl(wx.ScrolledWindow):
         return newpos
 
     def OnLeftDClickEvent(self, event):
-        if self.potential_bar == 1:
-            mi,ma = self.GetAbsoluteRange()
-            self.SetCurrentRange(mi,ma)
+        lcr,rcr = self.GetRange()
+        lar,rar = self.GetAbsoluteRange()
 
-            #do an event...
-            range_event = RangeEvent(
-                    GetAbsoluteRange = self.GetAbsoluteRange,
-                    GetRange = self.GetRange,
-                    )
-            wx.PostEvent(self, range_event)
+        if self.stored_range is None:
+            lsr,rsr = self.GetAbsoluteRange()
+        else:
+            lsr,rsr = self.stored_range
+
+        self.stored_range = [lcr,rcr]
+
+        new_range = [lsr,rsr]
+        if self.potential_bar == -1:
+            #double click left expands the left
+            if lcr != lar:
+                new_range = [lar,rcr]
+        elif self.potential_bar == 3:
+            #double click right expands the right
+            if rcr != rar:
+                new_range = [lcr,rar]
+        else:
+            #clicked in the middle:
+            if lcr != lar or rcr != rar:
+                new_range = [lar,rar]
+
+        self.SetCurrentRange(new_range)
+
+        #do an event...
+        range_event = RangeEvent(
+                GetAbsoluteRange = self.GetAbsoluteRange,
+                GetRange = self.GetRange,
+                )
+        wx.PostEvent(self, range_event)
 
     def OnRightUpEvent(self, event):
         coords = [self.x, self.y]
@@ -641,44 +709,46 @@ class HistogramCtrl(wx.ScrolledWindow):
             self.flag_clicked = 0
             self.UpdateDrawing()
 
-        #do the tooltip
-        if self.flag_clicked == 1:
-            if self.active_bar == 1:
-                s = "%.2f , %.2f" % (self.left_current_range,self.right_current_range)
+        if self.histogram_scaled is not None:
+            #do the tooltip
+            if self.flag_clicked == 1 and self.active_bar == 1:
+                s = "%.2f , %.2f" % (self.current_range[0],self.current_range[1])
+                flag = 0
             else:
-                factor = (self.right_absolute_range-self.left_absolute_range)
-                s = "%.2f" % (factor*self.x/float(w)+self.left_absolute_range)
-        else:
-            factor = (self.right_absolute_range-self.left_absolute_range)
-            s = "%.2f" % (factor*self.x/float(w)+self.left_absolute_range)
+                factor = (self.absolute_range[1]-self.absolute_range[0])
+                if self.x >= 0 and self.x < self.histogram_scaled.shape[0]:
+                    hval = self.histogram_scaled[self.x]
+                    s = "%.2f, %d" % ((factor*self.x/float(w)+self.absolute_range[0]), hval)
+                else:
+                    s = ""
 
-        self.tt.SetTip(s)
+            self.tt.SetTip(s)
 
     def OnLutMenu(self,evt):
         self.SetLutIndex(evt.GetId()-self._popup,redraw=1)
 
     def GetAbsoluteRange(self):
-        return self.left_absolute_range,self.right_absolute_range
+        return self.absolute_range
 
     def GetRange(self):
-        return self.left_current_range,self.right_current_range
+        return self.current_range
 
     def UpdateDrawing(self):
-        if self.buffer is not None:
-            dc = wx.BufferedDC(wx.ClientDC(self), self.buffer)
-            self.DoDrawing(dc)
+        if self.buffer is None:
+            return
 
-    def SetCurrentRange(self,mi,ma,redraw=1):
-        self.left_current_range = mi
-        self.right_current_range = ma
+        dc = wx.BufferedDC(wx.ClientDC(self), self.buffer)
+        self.DoDrawing(dc)
+
+    def SetCurrentRange(self,current_range,redraw=1):
+        self.current_range = current_range
         self.MakeLeftRightDC()
 
         if redraw:
             self.UpdateDrawing()
 
-    def SetAbsoluteRange(self,mi,ma):
-        self.left_absolute_range = mi
-        self.right_absolute_range = ma
+    def SetAbsoluteRange(self,absolute_range):
+        self.absolute_range = absolute_range
 
     def GetLut(self):
         return self.LutData.get_lut(self.lut_index)
@@ -697,17 +767,17 @@ class HistogramCtrl(wx.ScrolledWindow):
         image.SetData(s)
 
         self.img=image
-        self.MakeLutBmp()
+        self.MakeLutImage()
 
         w,h = self.GetClientSize()
-        self.buffer = wx.EmptyBitmapRGBA(w,h,0,0,0,1)
-        #img = wx.EmptyImage(w,h,clear=True)
-        #img.SetData("\xff\xff\xff")
-        #w,h = self.GetClientSize()
-        #img_scaled = img.Scale(w,h)
-        #self.buffer = img_scaled.ConvertToBitmap()
-
-        dc = wx.BufferedDC(None, self.buffer)
+        if 1:
+            #FIXME this causes problems!!
+            self.buffer = wx.EmptyBitmapRGBA(w,h,0,0,0,1)
+        else:
+            img = wx.EmptyImage(1,1)
+            img.SetData("\xff\xff\xff")
+            img_scaled = img.Scale(w,h)
+            self.buffer = img_scaled.ConvertToBitmap()
 
         if redraw:
             self.UpdateDrawing()
@@ -752,7 +822,7 @@ class HistogramCtrl(wx.ScrolledWindow):
         if w <= 0 or self.active_bar == -1 or self.active_bar == 3:
             return
 
-        absolute_width = self.right_absolute_range - self.left_absolute_range
+        absolute_width = self.absolute_range[1] - self.absolute_range[0]
         factor = float(absolute_width) / w
 
         if self.active_bar == 0 or self.active_bar == 2:
@@ -761,34 +831,34 @@ class HistogramCtrl(wx.ScrolledWindow):
             cy = coords[1] - self.y_delta
 
             #convert cx to ...
-            rx = cx * factor +self.left_absolute_range
+            rx = cx * factor +self.absolute_range[0]
 
             if self.active_bar == 0:
                 if cx <=0:
                     self.left_dc = 0
-                    self.left_current_range = self.left_absolute_range
-                elif self.right_current_range - rx > self.min_span:
+                    self.current_range[0] = self.absolute_range[0]
+                elif self.current_range[1] - rx > self.min_span:
                     self.left_dc = cx
-                    self.left_current_range = rx
+                    self.current_range[0] = rx
                 else:
                     self.left_dc = self.right_dc - self.min_span * w / float(absolute_width)
-                    self.left_current_range = self.right_current_range - self.min_span
+                    self.current_range[0] = self.current_range[1] - self.min_span
 
             elif self.active_bar == 2:
                 if cx >= w:
                     self.right_dc = w-1
-                    self.right_current_range = self.right_absolute_range
-                elif rx - self.left_current_range > self.min_span:
+                    self.current_range[1] = self.absolute_range[1]
+                elif rx - self.current_range[0] > self.min_span:
                     self.right_dc = cx
-                    self.right_current_range = rx
+                    self.current_range[1] = rx
                 else:
                     self.right_dc = self.left_dc + self.min_span * w / float(absolute_width)
-                    self.right_current_range = self.left_current_range + self.min_span
+                    self.current_range[1] = self.current_range[0] + self.min_span
         else:
             #how far from click?
             d = coords[0] - self.click_coords[0]
             range_dc = self.right_dc - self.left_dc
-            range_current = self.right_current_range - self.left_current_range
+            range_current = self.current_range[1] - self.current_range[0]
 
             left_dc = self.left_dc + d
             right_dc = self.right_dc + d
@@ -796,18 +866,18 @@ class HistogramCtrl(wx.ScrolledWindow):
             if left_dc <= 0:
                 self.left_dc = 0
                 self.right_dc = range_dc
-                self.left_current_range = self.left_absolute_range
-                self.right_current_range = self.left_absolute_range + range_current
+                self.current_range[0] = self.absolute_range[0]
+                self.current_range[1] = self.absolute_range[0] + range_current
             elif right_dc >= w:
                 self.right_dc = w-1
                 self.left_dc = w-1 - range_dc
-                self.right_current_range = self.right_absolute_range
-                self.left_current_range = self.right_absolute_range - range_current
+                self.current_range[1] = self.absolute_range[1]
+                self.current_range[0] = self.absolute_range[1] - range_current
             else:
                 self.right_dc = right_dc
                 self.left_dc = left_dc
-                self.right_current_range = right_dc * factor + self.left_absolute_range
-                self.left_current_range = left_dc * factor + self.left_absolute_range
+                self.current_range[1] = right_dc * factor + self.absolute_range[0]
+                self.current_range[0] = left_dc * factor + self.absolute_range[0]
 
             self.click_coords = coords
 
@@ -828,7 +898,6 @@ class OpacityCtrl(wx.ScrolledWindow):
     y_delta = 0
     left_range = 0
     right_range = 255
-    nlpt = (.2,.5) #Non-linearity point: at 30% up, 80% of the opacity...
 
     def __init__(self, parent, LutData, lut_index = 0, nodes_array=None,size=(-1,100)):
         wx.ScrolledWindow.__init__(self, parent, -1, size=size, style=wx.SUNKEN_BORDER)
@@ -855,7 +924,7 @@ class OpacityCtrl(wx.ScrolledWindow):
         self.Bind(wx.EVT_CHAR, self.OnKeyDown)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeaveWindow)
 
-        self.MakeLutBmp()
+        self.MakeLutImage()
 
     def SetNodes(self,nodes_array=None):
         w,h = self.GetClientSize()
@@ -895,14 +964,14 @@ class OpacityCtrl(wx.ScrolledWindow):
     def OnPopupRemove(self,event):
         self.RemoveNode(self.active_node)
         self.CalcScreenNodes()
-        self.MakeLutBmp()
+        self.MakeLutImage()
         self.UpdateDrawing()
 
     def OnPopupAdd(self,event):
         l,r = self.GetLeftRight(self.x)
         self.AddNode(l,r,(self.x,self.y))
         self.CalcScreenNodes()
-        self.MakeLutBmp()
+        self.MakeLutImage()
         self.UpdateDrawing()
 
     def OnKeyDown(self,event):
@@ -914,7 +983,7 @@ class OpacityCtrl(wx.ScrolledWindow):
             if av!=0 and av!=self.n_nodes-1 and av is not None:
                 self.RemoveNode(av)
                 self.CalcScreenNodes()
-                self.MakeLutBmp()
+                self.MakeLutImage()
                 self.UpdateDrawing()
 
         elif k == 61 or k == 43:
@@ -922,7 +991,7 @@ class OpacityCtrl(wx.ScrolledWindow):
                 l,r = self.GetLeftRight(self.x)
                 self.AddNode(l,r,(self.x,self.y))
                 self.CalcScreenNodes()
-                self.MakeLutBmp()
+                self.MakeLutImage()
                 self.hit_node(coords)
                 self.UpdateDrawing()
 
@@ -1017,7 +1086,7 @@ class OpacityCtrl(wx.ScrolledWindow):
 
             self.SetNodes()
 
-            self.MakeLutBmp()
+            self.MakeLutImage()
             self.MakeBgBmp()
 
             # Initialize the buffer bitmap.  No real DC is needed at this point.
@@ -1041,17 +1110,13 @@ class OpacityCtrl(wx.ScrolledWindow):
 
     def MakeBgBmp(self):
         w,h = self.GetClientSize()
-        bg = make_checker(w,h,16,150,220)
 
-        array = numpy.zeros( (h, w, 3),numpy.uint8)
-        array[:,:,0] = bg
-        array[:,:,1] = bg
-        array[:,:,2] = bg
+        if w == 0 or h == 0:
+            return
 
-        self.img_bg = wx.EmptyImage(w,h)
-        self.img_bg.SetData(array.tostring())
+        self.bmp_bg = wx.BitmapFromBufferRGBA(w,h,make_checker(w,h,16,(150,150,150),(220,220,220)))
 
-    def MakeLutBmp(self):
+    def MakeLutImage(self):
         if self.nodes_array is None:
             return
 
@@ -1075,34 +1140,15 @@ class OpacityCtrl(wx.ScrolledWindow):
         bmp = self.img_lut.ConvertToBitmap()
         dc.DrawBitmap(bmp,0,0)
 
-    def DrawCheckerBoard(self,dc, box=5):
+    def DrawCheckerBoard(self,dc):
         """
         Draws a checkerboard on a wx.DC.
         Used for the Alpha channel control and the colour panels.
         """
+        if self.bmp_bg is None:
+            return
 
-        if 0:
-            checkColour = wx.Colour(200, 200, 200)
-
-            w,h=dc.GetSize()
-
-            y = 0
-            checkPen = wx.Pen(checkColour)
-            checkBrush = wx.Brush(checkColour)
-
-            dc.SetPen(checkPen) 
-            dc.SetBrush(checkBrush)
-            
-            while y < h:
-                x = box*((y/box)%2)
-                while x < w: 
-                    dc.DrawRectangle(x, y, box, box) 
-                    x += box*2 
-                y += box
-        else:
-            bmp = self.img_bg.ConvertToBitmap()
-            dc.DrawBitmap(bmp,0,0)
-
+        dc.DrawBitmap(self.bmp_bg,0,0)
 
     def DrawNodes(self,dc):
         s = self.node_size
@@ -1223,7 +1269,7 @@ class OpacityCtrl(wx.ScrolledWindow):
                 self.drawing = True
                 self.CaptureMouse()
             self.CalcScreenNodes()
-            self.MakeLutBmp()
+            self.MakeLutImage()
             self.UpdateDrawing()
 
         if self.active_node is not None:
@@ -1240,9 +1286,11 @@ class OpacityCtrl(wx.ScrolledWindow):
         self.tt.SetTip(s)
 
     def UpdateDrawing(self):
-        if self.buffer is not None:
-            dc = wx.BufferedDC(wx.ClientDC(self), self.buffer)
-            self.DoDrawing(dc)
+        if self.buffer is None:
+            return
+
+        dc = wx.BufferedDC(wx.ClientDC(self), self.buffer)
+        self.DoDrawing(dc)
 
     def SetRange(self,mi,ma,redraw=1):
         self.left_range = mi
@@ -1260,7 +1308,7 @@ class OpacityCtrl(wx.ScrolledWindow):
         image.SetData(s)
 
         self.img=image
-        self.MakeLutBmp()
+        self.MakeLutImage()
 
         if redraw:
             self.UpdateDrawing()
@@ -1281,7 +1329,7 @@ class OpacityCtrl(wx.ScrolledWindow):
         self.nodes_array[active_node,0]=cx/float(w)
         self.nodes_array[active_node,1]= (h-cy)/float(h)
 
-        self.MakeLutBmp()
+        self.MakeLutImage()
 
     def hit_node(self,coords):
         #first get the hull points...
