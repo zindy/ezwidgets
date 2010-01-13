@@ -13,7 +13,8 @@ A simple python converter was written to read the ICOL, raw and ASCII formats. I
 = Screenshots =
 Enough of the theory, this is what the controls look like (Windows and GTK):
 
-[http://ezwidgets.googlecode.com/svn/pics/lutctrl.png]
+[http://ezwidgets.googlecode.com/svn/pics/lutctrl_xp.png]
+[http://ezwidgets.googlecode.com/svn/pics/lutctrl_linux.png]
 
 Partial list of the luts included: [http://rsb.info.nih.gov/ij/download/luts/LUT_Montage.jpg LUT_Montage.jpg]
 
