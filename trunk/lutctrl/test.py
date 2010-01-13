@@ -46,7 +46,7 @@ import numpy
 
 class TestFrame(wx.Frame):
     def __init__(self):
-        wx.Frame.__init__(self, None, -1, "LutCtrl (x3), OpacityCtrl and HistogramCtrl", size=(480,340))
+        wx.Frame.__init__(self, None, -1, "Lut, Opacity and Histogram", size=(320,340))
         self.CreateStatusBar()
 
 
