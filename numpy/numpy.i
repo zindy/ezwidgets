@@ -9,53 +9,6 @@
 #include <numpy/arrayobject.h>
 %}
 
-/**********************************************************************/
-
-%fragment("NumPy_Managed_Arrays", "header")
-{
-
-/* Managed memory method outlined by Travis Oliphant in
- * http://blog.enthought.com/?p=62
- * Implementation inspired by nifticlib.i, implemented
- * in numpy.i by Egor Zindy.
- *
- * define an import_managed() routine and a new python
- * object type that performs the array data de-allocation
- * when the ref count goes to zero
- */
-
-%#undef import_array
-%#define import_array() {if (_import_array() < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import"); return; }; _MyDeallocType.tp_new = PyType_GenericNew; if (PyType_Ready(&_MyDeallocType) < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "Custom memory management failed to initialize (numpy.i)"); return; }  }
-
-%#undef import_array1
-%#define import_array1(ret) {if (_import_array() < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import"); return ret; }; _MyDeallocType.tp_new = PyType_GenericNew; if (PyType_Ready(&_MyDeallocType) < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, "Custom memory management failed to initialize (numpy.i)"); return ret; }  }
-
-%#undef import_array2
-%#define import_array2(msg, ret) {if (_import_array() < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, msg); return ret; }; _MyDeallocType.tp_new = PyType_GenericNew; if (PyType_Ready(&_MyDeallocType) < 0) {PyErr_Print(); PyErr_SetString(PyExc_ImportError, msg); return ret; } }
-
-typedef struct
-{
-  PyObject_HEAD
-  void *memory;
-} _MyDeallocObject;
-
-static void _mydealloc_dealloc(_MyDeallocObject *self)
-{
-  free(self->memory);
-  self->ob_type->tp_free((PyObject *)self);
-}
-
-static PyTypeObject _MyDeallocType = {
-  PyObject_HEAD_INIT(NULL)
-  0, "mydeallocator", sizeof(_MyDeallocObject), 0, (destructor)(_mydealloc_dealloc),
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Py_TPFLAGS_DEFAULT,
-  "Internal deallocator object",
-};
-
-}
-
-/**********************************************************************/
-
 %fragment("NumPy_Backward_Compatibility", "header")
 {
 /* Support older NumPy data type names
@@ -213,8 +166,8 @@ static PyTypeObject _MyDeallocType = {
     }
     else
     {
-      const char * desired_type = typecode_string(typecode);
-      const char * actual_type  = pytype_string(input);
+      const char* desired_type = typecode_string(typecode);
+      const char* actual_type  = pytype_string(input);
       PyErr_Format(PyExc_TypeError,
                    "Array of type '%s' required.  A '%s' was given",
                    desired_type, actual_type);
@@ -516,7 +469,6 @@ static PyTypeObject _MyDeallocType = {
 
 /* Combine all NumPy fragments into one for convenience */
 %fragment("NumPy_Fragments", "header",
-          fragment="NumPy_Managed_Arrays",
           fragment="NumPy_Backward_Compatibility",
           fragment="NumPy_Macros",
           fragment="NumPy_Utilities",
@@ -1660,19 +1612,15 @@ static PyTypeObject _MyDeallocType = {
   $2 = &dim_temp;
 }
 %typemap(argout,
-         fragment="NumPy_Backward_Compatibility,NumPy_Managed_Arrays")
+         fragment="NumPy_Backward_Compatibility")
   (DATA_TYPE** ARGOUTVIEWM_ARRAY1, DIM_TYPE* DIM1)
 {
   npy_intp dims[1] = { *$2 };
   PyObject * array = PyArray_SimpleNewFromData(1, dims, DATA_TYPECODE, (void*)(*$1));
-  /* create deallocator */
-  PyObject * newobj=NULL;
 
   if (!array) SWIG_fail;
 
-  newobj = (PyObject *)(PyObject_New(_MyDeallocObject, &_MyDeallocType));
-  ((_MyDeallocObject *)newobj)->memory = (void*)(*$1); 
-  PyArray_BASE(array) = newobj; 
+  PyArray_BASE(array) = PyCObject_FromVoidPtr((void*)(*$1), free);
 
   $result = SWIG_Python_AppendOutput($result,array);
 }
@@ -1687,19 +1635,15 @@ static PyTypeObject _MyDeallocType = {
   $2 = &data_temp;
 }
 %typemap(argout,
-         fragment="NumPy_Backward_Compatibility,NumPy_Managed_Arrays")
+         fragment="NumPy_Backward_Compatibility")
   (DIM_TYPE* DIM1, DATA_TYPE** ARGOUTVIEWM_ARRAY1)
 {
   npy_intp dims[1] = { *$1 };
   PyObject * array = PyArray_SimpleNewFromData(1, dims, DATA_TYPECODE, (void*)(*$2));
-  /* create deallocator */
-  PyObject * newobj=NULL;
 
   if (!array) SWIG_fail;
 
-  newobj = (PyObject *)(PyObject_New(_MyDeallocObject, &_MyDeallocType));
-  ((_MyDeallocObject *)newobj)->memory = (void*)(*$2); 
-  PyArray_BASE(array) = newobj; 
+  PyArray_BASE(array) = PyCObject_FromVoidPtr((void*)(*$1), free);
 
   $result = SWIG_Python_AppendOutput($result,array);
 }
@@ -1715,19 +1659,15 @@ static PyTypeObject _MyDeallocType = {
   $3 = &dim2_temp;
 }
 %typemap(argout,
-         fragment="NumPy_Backward_Compatibility,NumPy_Managed_Arrays")
+         fragment="NumPy_Backward_Compatibility")
   (DATA_TYPE** ARGOUTVIEWM_ARRAY2, DIM_TYPE* DIM1, DIM_TYPE* DIM2)
 {
   npy_intp dims[2] = { *$2, *$3 };
   PyObject * array = PyArray_SimpleNewFromData(2, dims, DATA_TYPECODE, (void*)(*$1));
-  /* create deallocator */
-  PyObject * newobj=NULL;
 
   if (!array) SWIG_fail;
 
-  newobj = (PyObject *)(PyObject_New(_MyDeallocObject, &_MyDeallocType));
-  ((_MyDeallocObject *)newobj)->memory = (void*)(*$1); 
-  PyArray_BASE(array) = newobj; 
+  PyArray_BASE(array) = PyCObject_FromVoidPtr((void*)(*$1), free);
 
   $result = SWIG_Python_AppendOutput($result,array);
 }
@@ -1743,19 +1683,15 @@ static PyTypeObject _MyDeallocType = {
   $3 = &data_temp;
 }
 %typemap(argout,
-         fragment="NumPy_Backward_Compatibility,NumPy_Managed_Arrays")
+         fragment="NumPy_Backward_Compatibility")
   (DIM_TYPE* DIM1, DIM_TYPE* DIM2, DATA_TYPE** ARGOUTVIEWM_ARRAY2)
 {
   npy_intp dims[2] = { *$1, *$2 };
   PyObject * array = PyArray_SimpleNewFromData(2, dims, DATA_TYPECODE, (void*)(*$3));
-  /* create deallocator */
-  PyObject * newobj=NULL;
 
   if (!array) SWIG_fail;
 
-  newobj = (PyObject *)(PyObject_New(_MyDeallocObject, &_MyDeallocType));
-  ((_MyDeallocObject *)newobj)->memory = (void*)(*$3); 
-  PyArray_BASE(array) = newobj; 
+  PyArray_BASE(array) = PyCObject_FromVoidPtr((void*)(*$1), free);
 
   $result = SWIG_Python_AppendOutput($result,array);
 }
@@ -1777,14 +1713,10 @@ static PyTypeObject _MyDeallocType = {
   npy_intp dims[2] = { *$2, *$3 };
   PyObject * obj = PyArray_SimpleNewFromData(2, dims, DATA_TYPECODE, (void*)(*$1));
   PyArrayObject * array = (PyArrayObject*) obj;
-  /* create deallocator */
-  PyObject * newobj=NULL;
 
   if (!array || !require_fortran(array)) SWIG_fail;
 
-  newobj = (PyObject *)(PyObject_New(_MyDeallocObject, &_MyDeallocType));
-  ((_MyDeallocObject *)newobj)->memory = (void*)(*$1); 
-  PyArray_BASE(array) = newobj; 
+  PyArray_BASE(obj) = PyCObject_FromVoidPtr((void*)(*$1), free);
 
   $result = SWIG_Python_AppendOutput($result,obj);
 }
@@ -1800,20 +1732,16 @@ static PyTypeObject _MyDeallocType = {
   $3 = &data_temp;
 }
 %typemap(argout,
-         fragment="NumPy_Backward_Compatibility,NumPy_Array_Requirements,NumPy_Managed_Arrays")
+         fragment="NumPy_Backward_Compatibility,NumPy_Array_Requirements")
   (DIM_TYPE* DIM1, DIM_TYPE* DIM2, DATA_TYPE** ARGOUTVIEWM_FARRAY2)
 {
   npy_intp dims[2] = { *$1, *$2 };
   PyObject * obj = PyArray_SimpleNewFromData(2, dims, DATA_TYPECODE, (void*)(*$3));
   PyArrayObject * array = (PyArrayObject*) obj;
-  /* create deallocator */
-  PyObject * newobj=NULL;
 
   if (!array || !require_fortran(array)) SWIG_fail;
 
-  newobj = (PyObject *)(PyObject_New(_MyDeallocObject, &_MyDeallocType));
-  ((_MyDeallocObject *)newobj)->memory = (void*)(*$3); 
-  PyArray_BASE(array) = newobj; 
+  PyArray_BASE(obj) = PyCObject_FromVoidPtr((void*)(*$1), free);
 
   $result = SWIG_Python_AppendOutput($result,obj);
 }
@@ -1831,19 +1759,15 @@ static PyTypeObject _MyDeallocType = {
   $4 = &dim3_temp;
 }
 %typemap(argout,
-         fragment="NumPy_Backward_Compatibility,NumPy_Managed_Arrays")
+         fragment="NumPy_Backward_Compatibility")
   (DATA_TYPE** ARGOUTVIEWM_ARRAY3, DIM_TYPE* DIM1, DIM_TYPE* DIM2, DIM_TYPE* DIM3)
 {
   npy_intp dims[3] = { *$2, *$3, *$4 };
   PyObject * array = PyArray_SimpleNewFromData(3, dims, DATA_TYPECODE, (void*)(*$1));
-  /* create deallocator */
-  PyObject * newobj=NULL;
 
   if (!array) SWIG_fail;
 
-  newobj = (PyObject *)(PyObject_New(_MyDeallocObject, &_MyDeallocType));
-  ((_MyDeallocObject *)newobj)->memory = (void*)(*$1); 
-  PyArray_BASE(array) = newobj; 
+  PyArray_BASE(array) = PyCObject_FromVoidPtr((void*)(*$1), free);
 
   $result = SWIG_Python_AppendOutput($result,array);
 }
@@ -1861,19 +1785,15 @@ static PyTypeObject _MyDeallocType = {
   $4 = &data_temp;
 }
 %typemap(argout,
-         fragment="NumPy_Backward_Compatibility,NumPy_Managed_Arrays")
+         fragment="NumPy_Backward_Compatibility")
   (DIM_TYPE* DIM1, DIM_TYPE* DIM2, DIM_TYPE* DIM3, DATA_TYPE** ARGOUTVIEWM_ARRAY3)
 {
   npy_intp dims[3] = { *$1, *$2, *$3 };
   PyObject * array = PyArray_SimpleNewFromData(3, dims, DATA_TYPECODE, (void*)(*$4));
-  /* create deallocator */
-  PyObject * newobj=NULL;
 
   if (!array) SWIG_fail;
 
-  newobj = (PyObject *)(PyObject_New(_MyDeallocObject, &_MyDeallocType));
-  ((_MyDeallocObject *)newobj)->memory = (void*)(*$4); 
-  PyArray_BASE(array) = newobj; 
+  PyArray_BASE(array) = PyCObject_FromVoidPtr((void*)(*$1), free);
 
   $result = SWIG_Python_AppendOutput($result,array);
 }
@@ -1897,14 +1817,10 @@ static PyTypeObject _MyDeallocType = {
   npy_intp dims[3] = { *$2, *$3, *$4 };
   PyObject * obj = PyArray_SimpleNewFromData(3, dims, DATA_TYPECODE, (void*)(*$1));
   PyArrayObject * array = (PyArrayObject*) obj;
-  /* create deallocator */
-  PyObject * newobj=NULL;
 
   if (!array || require_fortran(array)) SWIG_fail;
 
-  newobj = (PyObject *)(PyObject_New(_MyDeallocObject, &_MyDeallocType));
-  ((_MyDeallocObject *)newobj)->memory = (void*)(*$1); 
-  PyArray_BASE(array) = newobj; 
+  PyArray_BASE(obj) = PyCObject_FromVoidPtr((void*)(*$1), free);
 
   $result = SWIG_Python_AppendOutput($result,obj);
 }
@@ -1927,15 +1843,11 @@ static PyTypeObject _MyDeallocType = {
 {
   npy_intp dims[3] = { *$1, *$2, *$3 };
   PyObject * obj = PyArray_SimpleNewFromData(3, dims, DATA_TYPECODE, (void*)(*$4));
-  /* create deallocator */
-  PyObject * newobj=NULL;
 
   PyArrayObject * array = (PyArrayObject*) obj;
   if (!array || require_fortran(array)) SWIG_fail;
 
-  newobj = (PyObject *)(PyObject_New(_MyDeallocObject, &_MyDeallocType));
-  ((_MyDeallocObject *)newobj)->memory = (void*)(*$4); 
-  PyArray_BASE(array) = newobj; 
+  PyArray_BASE(obj) = PyCObject_FromVoidPtr((void*)(*$1), free);
 
   $result = SWIG_Python_AppendOutput($result,obj);
 }
