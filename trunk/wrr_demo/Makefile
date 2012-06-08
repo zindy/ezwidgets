@@ -4,7 +4,7 @@ CFLAGS=-I$(IDIR) -march=native -O9 -ffast-math -fopenmp
 
 ODIR=obj
 
-LIBS=-lm -lgomp
+LIBS=-lm -lgomp -lrt
 
 _DEPS = wrr.h myalloc.h gopt.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
