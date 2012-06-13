@@ -63,7 +63,7 @@ void wrr(int *ImageIn, int Ydim, int Xdim, int nbits, float BlurStdDev, float We
     Data2 = (int **)(make_strides(*ImageOut, Ydim, Xdim, sizeof(int)));
 
     /* Was all the memory allocation successful? */
-    if (ImageWeight == NULL || Weight == NULL || Data1 == NULL || ImageOut == NULL || Data2 == NULL)
+    if (ImageWeight == NULL || Weight == NULL || Data1 == NULL || *ImageOut == NULL || Data2 == NULL)
     {
         errno = ENOMEM;
         goto end;
@@ -171,7 +171,7 @@ void parallel_wrr(int *ImageIn, int Ydim, int Xdim, int nbits, float BlurStdDev,
     Data2 = (int **)(make_strides(*ImageOut, Ydim, Xdim, sizeof(int)));
 
     /* Was all the memory allocation successful? */
-    if (ImageWeight == NULL || Weight == NULL || Data1 == NULL || ImageOut == NULL || Data2 == NULL)
+    if (ImageWeight == NULL || Weight == NULL || Data1 == NULL || *ImageOut == NULL || Data2 == NULL)
     {
         errno = ENOMEM;
         goto end;
@@ -276,7 +276,7 @@ void rr(int *ImageIn, int Ydim, int Xdim, int nbits, int Radius, int Step, int *
     Data2 = (int **)(make_strides(*ImageOut, Ydim, Xdim, sizeof(int)));
 
     /* Was all the memory allocation successful? */
-    if (Data1 == NULL || ImageOut == NULL || Data2 == NULL)
+    if (Data1 == NULL || *ImageOut == NULL || Data2 == NULL)
     {
         errno = ENOMEM;
         goto end;
@@ -328,7 +328,7 @@ void parallel_rr(int *ImageIn, int Ydim, int Xdim, int nbits, int Radius, int St
     Data2 = (int **)(make_strides(*ImageOut, Ydim, Xdim, sizeof(int)));
 
     /* Was all the memory allocation successful? */
-    if (Data1 == NULL || ImageOut == NULL || Data2 == NULL)
+    if (Data1 == NULL || *ImageOut == NULL || Data2 == NULL)
     {
         errno = ENOMEM;
         goto end;
