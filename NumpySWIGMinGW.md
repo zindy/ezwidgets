@@ -1,0 +1,5 @@
+This article was moved to the SciPy cookbook.
+http://www.scipy.org/Cookbook/SWIG_NumPy_examples
+
+Regards,
+Egor
